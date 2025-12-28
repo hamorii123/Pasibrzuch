@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>P@SIBRZUCH - {% block title %}Klient{% endblock %}</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/mobile.css') }}">
+    <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
+    <meta name="theme-color" content="#FF6B35">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <style>
+        {% block extra_css %}{% endblock %}
+    </style>
+</head>
+<body>
+    <!-- Header - zgodny z CSS -->
+    <header class="header safe-area-top">
+        <div class="header-title">
+            <i class="fas fa-utensils"></i>
+            P@<strong>SIBRZUCH</strong>
+        </div>
+        <div class="header-actions">
+            <button class="header-btn" onclick="toggleNotifications()">
+                <i class="fas fa-bell"></i>
+            </button>
+            <a href="{{ url_for('client_dashboard') }}" class="header-btn">
+                <i class="fas fa-user"></i>
+            </a>
+        </div>
+    </header>
+
+    <!-- Main Content - zgodny z CSS -->
+    <main class="main safe-area-bottom">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="toast">
+                        <i class="fas fa-{% if category == 'success' %}check-circle{% else %}exclamation-circle{% endif %}"></i>
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Floating Action Button -->
+    <button class="fab" onclick="toggleFabMenu()">
+        <i class="fas fa-plus"></i>
+    </button>
+
+    <div class="fab-menu" id="fabMenu">
+        <a href="{{ url_for('client_dashboard') }}" class="fab-item">
+            <i class="fas fa-home"></i>
+            <span>Start</span>
+        </a>
+        <a href="{{ url_for('client_restaurants') }}" class="fab-item">
+            <i class="fas fa-store"></i>
+            <span>Restauracje</span>
+        </a>
+        <a href="{{ url_for('client_restaurants') }}" class="fab-item">
+            <i class="fas fa-search"></i>
+            <span>Szukaj</span>
+        </a>
+        <a href="{{ url_for('logout') }}" class="fab-item">
+            <i class="fas fa-sign-out-alt"></i>
+            <span>Wyloguj</span>
+        </a>
+    </div>
+
+    <!-- JavaScript -->
+    <script src="{{ url_for('static', filename='js/mobile.js') }}"></script>
+    <script>
+        // Service Worker for PWA
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/static/js/sw.js')
+                .then(() => console.log('Service Worker Registered'))
+                .catch(err => console.log('Service Worker Error:', err));
+        }
+
+        // Fab menu toggle
+        function toggleFabMenu() {
+            const menu = document.getElementById('fabMenu');
+            menu.classList.toggle('show');
+        }
+
+        // Toast auto-hide
+        setTimeout(() => {
+            const toasts = document.querySelectorAll('.toast');
+            toasts.forEach(toast => {
+                toast.style.transition = 'opacity 0.3s';
+                toast.style.opacity = '0';
+                setTimeout(() => toast.remove(), 300);
+            });
+        }, 3000);
+
+        function toggleNotifications() {
+            alert('Powiadomienia');
+        }
+
+        {% block extra_js %}{% endblock %}
+    </script>
+</body>
+</html>

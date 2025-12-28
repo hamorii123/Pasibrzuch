@@ -1,0 +1,306 @@
+{% extends "client/layout.html" %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="h3">Rezerwacja stolika</h1>
+                    <p class="text-muted">{{ restaurant.name }}</p>
+                </div>
+                <a href="{{ url_for('client_menu', restaurant_id=restaurant.id) }}" class="btn btn-outline-primary">
+                    <i class="bi bi-arrow-left"></i> Wróć do menu
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Formularz rezerwacji -->
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="bi bi-calendar-check me-2"></i> Dane rezerwacji</h5>
+                </div>
+                <div class="card-body">
+                    <form id="reservationForm" onsubmit="submitReservation(event)">
+                        <!-- Data i godzina -->
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="date" class="form-label">Data *</label>
+                                <input type="date" class="form-control" id="date" required
+                                       min="{{ now().strftime('%Y-%m-%d') }}">
+                            </div>
+                            <div class="col-md-6">
+                                <label for="time" class="form-label">Godzina *</label>
+                                <select class="form-select" id="time" required>
+                                    <option value="">Wybierz godzinę</option>
+                                    <option value="17:00">17:00</option>
+                                    <option value="17:30">17:30</option>
+                                    <option value="18:00">18:00</option>
+                                    <option value="18:30">18:30</option>
+                                    <option value="19:00">19:00</option>
+                                    <option value="19:30">19:30</option>
+                                    <option value="20:00">20:00</option>
+                                    <option value="20:30">20:30</option>
+                                    <option value="21:00">21:00</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Liczba osób i stolik -->
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="people" class="form-label">Liczba osób *</label>
+                                <select class="form-select" id="people" required onchange="filterTables()">
+                                    <option value="">Wybierz</option>
+                                    <option value="1">1 osoba</option>
+                                    <option value="2">2 osoby</option>
+                                    <option value="3">3 osoby</option>
+                                    <option value="4">4 osoby</option>
+                                    <option value="5">5 osób</option>
+                                    <option value="6">6 osób</option>
+                                    <option value="7">7+ osób</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="table" class="form-label">Wybierz stolik *</label>
+                                <select class="form-select" id="table" required>
+                                    <option value="">Najpierw wybierz liczbę osób</option>
+                                    {% for table in tables %}
+                                    <option value="{{ table.id }}" data-seats="{{ table.seats }}">
+                                        Stolik {{ table.number }} ({{ table.seats }} os.)
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Wybrane dania -->
+                        <div class="mb-3">
+                            <label class="form-label">Dania do rezerwacji</label>
+                            <div id="selectedItems" class="border rounded p-3">
+                                <p class="text-muted mb-0">Brak wybranych dań</p>
+                            </div>
+                            <small class="form-text text-muted">
+                                Możesz dodać dania z menu, które będą przygotowane na Twoje przyjście
+                            </small>
+                        </div>
+
+                        <!-- Notatki -->
+                        <div class="mb-4">
+                            <label for="notes" class="form-label">Dodatkowe informacje</label>
+                            <textarea class="form-control" id="notes" rows="3"
+                                      placeholder="Np. alergie, okazja, preferowane miejsce..."></textarea>
+                        </div>
+
+                        <!-- Przyciski -->
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <a href="{{ url_for('client_menu', restaurant_id=restaurant.id) }}"
+                               class="btn btn-outline-secondary me-2">
+                                <i class="bi bi-plus-circle"></i> Dodaj dania z menu
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-check-circle"></i> Zarezerwuj stolik
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Podsumowanie -->
+        <div class="col-lg-4">
+            <div class="card">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0"><i class="bi bi-info-circle me-2"></i> Informacje</h5>
+                </div>
+                <div class="card-body">
+                    <h6>Restauracja {{ restaurant.name }}</h6>
+                    <p class="small text-muted">{{ restaurant.address }}</p>
+
+                    <hr>
+
+                    <h6>Dostępne stoliki</h6>
+                    <div id="tablesList">
+                        {% for table in tables %}
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <div>
+                                <span class="fw-bold">Stolik {{ table.number }}</span>
+                                <small class="text-muted d-block">{{ table.seats }} miejsca</small>
+                            </div>
+                            <span class="badge {% if table.status == 'wolny' %}bg-success{% else %}bg-secondary{% endif %}">
+                                {{ table.status }}
+                            </span>
+                        </div>
+                        {% endfor %}
+                    </div>
+
+                    <hr>
+
+                    <div class="alert alert-info small">
+                        <i class="bi bi-exclamation-circle"></i>
+                        <strong>Ważne informacje:</strong>
+                        <ul class="mb-0 mt-2">
+                            <li>Rezerwacja obowiązuje przez 15 minut od podanej godziny</li>
+                            <li>Możesz anulować rezerwację do 2 godzin przed czasem</li>
+                            <li>Rezerwacja wymaga potwierdzenia SMS</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Dane z localStorage
+let reservationItems = JSON.parse(localStorage.getItem('reservationItems_' + {{ restaurant.id }}) || '[]');
+
+function updateSelectedItems() {
+    const container = document.getElementById('selectedItems');
+
+    if (reservationItems.length === 0) {
+        container.innerHTML = '<p class="text-muted mb-0">Brak wybranych dań</p>';
+        return;
+    }
+
+    let html = '<div class="list-group list-group-flush">';
+    reservationItems.forEach(item => {
+        html += `
+            <div class="list-group-item d-flex justify-content-between align-items-center">
+                <div>${item.name}</div>
+                <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeItem(${item.id})">
+                    <i class="bi bi-trash"></i>
+                </button>
+            </div>
+        `;
+    });
+    html += '</div>';
+    container.innerHTML = html;
+}
+
+function removeItem(itemId) {
+    reservationItems = reservationItems.filter(item => item.id !== itemId);
+    localStorage.setItem('reservationItems_' + {{ restaurant.id }}, JSON.stringify(reservationItems));
+    updateSelectedItems();
+}
+
+function filterTables() {
+    const people = parseInt(document.getElementById('people').value) || 0;
+    const tableSelect = document.getElementById('table');
+
+    // Reset opcji
+    tableSelect.innerHTML = '<option value="">Wybierz stolik</option>';
+
+    if (people > 0) {
+        // Dodaj tylko stoliki z odpowiednią liczbą miejsc
+        const tableOptions = Array.from(tableSelect.options);
+        tableOptions.forEach(option => {
+            if (option.dataset.seats) {
+                const seats = parseInt(option.dataset.seats);
+                if (seats >= people) {
+                    tableSelect.appendChild(option.cloneNode(true));
+                }
+            }
+        });
+    }
+}
+
+function submitReservation(event) {
+    event.preventDefault();
+
+    const formData = {
+        date: document.getElementById('date').value,
+        time: document.getElementById('time').value,
+        people: document.getElementById('people').value,
+        table_id: document.getElementById('table').value,
+        notes: document.getElementById('notes').value,
+        menu_items: reservationItems.map(item => item.id)
+    };
+
+    // Walidacja
+    if (!formData.table_id) {
+        alert('Proszę wybrać stolik');
+        return;
+    }
+
+    // Symulacja wysłania do serwera
+    fetch('{{ url_for("client_reservation", restaurant_id=restaurant.id) }}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Wyczyść localStorage po udanej rezerwacji
+            localStorage.removeItem('reservationItems_' + {{ restaurant.id }});
+
+            // Pokaż komunikat sukcesu
+            showSuccessModal(data.message);
+        } else {
+            alert('Błąd: ' + data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Wystąpił błąd podczas rezerwacji');
+    });
+}
+
+function showSuccessModal(message) {
+    const modalHTML = `
+        <div class="modal fade" id="successModal" tabindex="-1">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+
+    // Pokaż modal
+    const modal = new bootstrap.Modal(document.getElementById('successModal'));
+    modal.show();
+
+    // Usuń modal po zamknięciu
+    document.getElementById('successModal').addEventListener('hidden.bs.modal', function () {
+        this.remove();
+        window.location.href = "{{ url_for('client_dashboard') }}";
+    });
+}
+
+// Inicjalizacja
+document.addEventListener('DOMContentLoaded', function() {
+    updateSelectedItems();
+
+    // Ustaw minimalną datę na dzisiaj
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById('date').setAttribute('min', today);
+    document.getElementById('date').value = today;
+});
+</script>
+{% endblock %}
+                    <div class="modal-header bg-success text-white">
+                        <h5 class="modal-title"><i class="bi bi-check-circle"></i> Sukces!</h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body text-center py-4">
+                        <i class="bi bi-calendar-check display-1 text-success"></i>
+                        <h4 class="mt-3">Rezerwacja została utworzona!</h4>
+                        <p class="text-muted">${message}</p>
+                    </div>
+                    <div class="modal-footer">
+                        <a href="{{ url_for('client_dashboard') }}" class="btn btn-success">
+                            <i class="bi bi-speedometer2"></i> Przejdź do panelu
+                        </a>
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+                            OK
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+
+    // Dodaj modal do DOM
+    document.body.insertAdjacentHTML('beforeend', modalHTML);

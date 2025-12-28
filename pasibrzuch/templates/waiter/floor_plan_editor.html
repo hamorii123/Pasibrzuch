@@ -1,0 +1,1377 @@
+{% extends "waiter/layout_tablet.html" %}
+{% block extra_css %}
+<style>
+    /* Główny kontener */
+    .floor-editor-container {
+        display: flex;
+        height: calc(100vh - 40px);
+        gap: 20px;
+        padding: 20px;
+        overflow: hidden;
+    }
+
+    /* Canvas Area */
+    .editor-canvas-area {
+        flex: 1;
+        background: var(--white);
+        border-radius: 12px;
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+        min-height: 0;
+        overflow: hidden;
+    }
+
+    .editor-canvas-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+        flex-wrap: wrap;
+        gap: 10px;
+        flex-shrink: 0;
+    }
+
+    .editor-canvas-header h3 {
+        font-size: 22px;
+        color: var(--dark);
+        margin: 0;
+    }
+
+    .editor-canvas-controls {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+
+    .editor-control-btn {
+        padding: 8px 12px;
+        border: 1px solid var(--light-gray);
+        background: white;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 14px;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        transition: all 0.3s;
+        flex-shrink: 0;
+    }
+
+    .editor-control-btn:hover {
+        border-color: var(--primary-orange);
+        color: var(--primary-orange);
+    }
+
+    .editor-table-counter {
+        background: var(--primary-orange);
+        color: white;
+        padding: 6px 12px;
+        border-radius: 15px;
+        font-size: 13px;
+        font-weight: 600;
+        white-space: nowrap;
+        flex-shrink: 0;
+    }
+
+    /* Canvas dla edytora */
+    #floorCanvas {
+        flex: 1;
+        background: #f8f9fa;
+        border-radius: 8px;
+        border: 2px solid #eee;
+        width: 100%;
+        height: 100%;
+        min-height: 300px;
+        cursor: pointer;
+    }
+
+    /* Status Legend */
+    .editor-status-legend {
+        display: flex;
+        gap: 15px;
+        margin-top: 15px;
+        flex-wrap: wrap;
+        flex-shrink: 0;
+    }
+
+    .editor-legend-item {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        flex-shrink: 0;
+    }
+
+    .editor-legend-color {
+        width: 16px;
+        height: 16px;
+        border-radius: 4px;
+        flex-shrink: 0;
+    }
+
+    .editor-legend-label {
+        font-size: 13px;
+        color: var(--gray);
+        flex-shrink: 0;
+    }
+
+    /* Controls Panel - Z POPRAWIONYM SCROLLEM */
+    .editor-controls-panel {
+        width: 320px;
+        min-width: 320px;
+        background: var(--white);
+        border-radius: 12px;
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+        overflow-y: auto; /* SCROLL VERTYKALNY */
+        overflow-x: hidden;
+        max-height: 100%;
+        height: calc(100vh - 100px); /* USTAW STAŁĄ WYSOKOŚĆ */
+    }
+
+    /* Styl dla scrollbara */
+    .editor-controls-panel::-webkit-scrollbar {
+        width: 8px;
+    }
+
+    .editor-controls-panel::-webkit-scrollbar-track {
+        background: #f1f1f1;
+        border-radius: 4px;
+    }
+
+    .editor-controls-panel::-webkit-scrollbar-thumb {
+        background: #c1c1c1;
+        border-radius: 4px;
+    }
+
+    .editor-controls-panel::-webkit-scrollbar-thumb:hover {
+        background: #a8a8a8;
+    }
+
+    /* Nagłówek panelu */
+    .panel-header {
+        margin-bottom: 20px;
+        flex-shrink: 0;
+    }
+
+    .panel-header h3 {
+        font-size: 18px;
+        color: var(--dark);
+        margin-bottom: 5px;
+    }
+
+    .panel-header p {
+        color: var(--gray);
+        font-size: 14px;
+    }
+
+    /* Toolbar z własnym scroll jeśli potrzeba */
+    .toolbar-scroll-container {
+        max-height: 200px;
+        overflow-y: auto;
+        margin-bottom: 20px;
+        border: 1px solid #eee;
+        border-radius: 8px;
+        padding: 5px;
+        background: #fafafa;
+        flex-shrink: 0;
+    }
+
+    .editor-toolbar {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 10px;
+        margin-bottom: 0;
+        flex-shrink: 0;
+    }
+
+    .editor-tool-btn {
+        padding: 12px;
+        border: 2px solid #eee;
+        background: white;
+        border-radius: 8px;
+        cursor: pointer;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 6px;
+        transition: all 0.3s;
+        flex-shrink: 0;
+    }
+
+    .editor-tool-btn:hover {
+        border-color: var(--primary-orange);
+        background: rgba(255,107,53,0.05);
+    }
+
+    .editor-tool-btn.active {
+        border-color: var(--primary-orange);
+        background: rgba(255,107,53,0.1);
+        color: var(--primary-orange);
+    }
+
+    .editor-tool-icon {
+        font-size: 18px;
+    }
+
+    .editor-tool-label {
+        font-size: 11px;
+        font-weight: 600;
+        text-align: center;
+    }
+
+    /* Scrollable content area - KLUCZOWY ELEMENT */
+    .editor-scrollable-content {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        min-height: 0; /* WAŻNE: pozwala na scroll wewnątrz flex item */
+        overflow-y: auto;
+        padding-right: 5px; /* Miejsce na scrollbar */
+    }
+
+    /* Selected Table Info */
+    .editor-selected-info {
+        background: #f8f9fa;
+        border-radius: 8px;
+        padding: 20px;
+        margin-bottom: 20px;
+        display: flex;
+        flex-direction: column;
+        min-height: 0;
+        flex-shrink: 0; /* Zapobiega kurczeniu */
+    }
+
+    .editor-selected-info h4 {
+        margin-bottom: 15px;
+        color: var(--dark);
+        font-size: 18px;
+        flex-shrink: 0;
+    }
+
+    .editor-property-group {
+        margin-bottom: 15px;
+        flex-shrink: 0;
+    }
+
+    .editor-form-group {
+        margin-bottom: 12px;
+        flex-shrink: 0;
+    }
+
+    .editor-form-label {
+        display: block;
+        margin-bottom: 5px;
+        font-weight: 500;
+        color: var(--gray);
+        font-size: 14px;
+    }
+
+    .editor-form-control {
+        width: 100%;
+        padding: 10px;
+        border: 1px solid #ddd;
+        border-radius: 6px;
+        font-size: 14px;
+        background: white;
+    }
+
+    .editor-form-control:focus {
+        outline: none;
+        border-color: var(--primary-orange);
+    }
+
+    /* Color Picker */
+    .editor-color-picker {
+        display: flex;
+        gap: 8px;
+        margin-top: 8px;
+        flex-shrink: 0;
+    }
+
+    .editor-color-option {
+        width: 30px;
+        height: 30px;
+        border-radius: 6px;
+        cursor: pointer;
+        border: 2px solid transparent;
+        transition: transform 0.2s;
+        flex-shrink: 0;
+    }
+
+    .editor-color-option:hover {
+        transform: scale(1.1);
+    }
+
+    .editor-color-option.selected {
+        border-color: #333;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    }
+
+    /* Shape Selector */
+    .editor-shape-selector {
+        display: flex;
+        gap: 10px;
+        flex-shrink: 0;
+    }
+
+    .editor-shape-btn {
+        flex: 1;
+        padding: 10px;
+        border: 2px solid #eee;
+        border-radius: 8px;
+        background: white;
+        cursor: pointer;
+        text-align: center;
+        transition: all 0.3s;
+        font-size: 14px;
+        flex-shrink: 0;
+    }
+
+    .editor-shape-btn:hover {
+        border-color: var(--primary-orange);
+    }
+
+    .editor-shape-btn.active {
+        border-color: var(--primary-orange);
+        background: rgba(255,107,53,0.1);
+        color: var(--primary-orange);
+    }
+
+    /* Size Controls */
+    .editor-size-controls {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+        flex-shrink: 0;
+    }
+
+    /* Action Buttons - na dole */
+    .editor-action-buttons {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+        margin-top: auto; /* Wypycha na dół */
+        padding-top: 20px;
+        flex-shrink: 0;
+    }
+
+    .editor-action-btn {
+        padding: 12px;
+        border: none;
+        border-radius: 8px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        font-size: 14px;
+        flex-shrink: 0;
+    }
+
+    .editor-action-btn.primary {
+        background: var(--primary-orange);
+        color: white;
+    }
+
+    .editor-action-btn.secondary {
+        background: var(--light-gray);
+        color: var(--dark);
+        border: 1px solid #ddd;
+    }
+
+    .editor-action-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+
+    /* No Selection Message */
+    .editor-no-selection {
+        text-align: center;
+        padding: 40px 20px;
+        color: var(--gray);
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        min-height: 200px;
+    }
+
+    .editor-no-selection i {
+        font-size: 48px;
+        margin-bottom: 15px;
+        color: #ddd;
+    }
+
+    .editor-no-selection p {
+        margin: 5px 0;
+        font-size: 14px;
+    }
+
+    /* Responsive */
+    @media (max-width: 1200px) {
+        .editor-controls-panel {
+            width: 300px;
+            min-width: 300px;
+        }
+    }
+
+    @media (max-width: 1024px) {
+        .floor-editor-container {
+            flex-direction: column;
+            height: auto;
+            min-height: 100vh;
+        }
+
+        .editor-canvas-area {
+            min-height: 500px;
+            height: 60vh;
+        }
+
+        .editor-controls-panel {
+            width: 100%;
+            min-width: 100%;
+            max-height: 40vh;
+        }
+    }
+
+    @media (max-width: 768px) {
+        .floor-editor-container {
+            padding: 15px;
+            gap: 15px;
+        }
+
+        .editor-toolbar {
+            grid-template-columns: repeat(2, 1fr);
+        }
+
+        .editor-action-buttons {
+            grid-template-columns: 1fr;
+        }
+
+        .editor-controls-panel {
+            padding: 15px;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="floor-plan-container">
+    <!-- Canvas Area -->
+    <div class="canvas-area">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <h3 style="margin: 0; color: #333;">Edytor Planu Sali: {{ restaurant.name }}</h3>
+            <div style="display: flex; gap: 10px; align-items: center;">
+                <button class="action-btn secondary" onclick="zoomOut()" style="padding: 8px 12px;">
+                    <i class="fas fa-search-minus"></i>
+                </button>
+                <button class="action-btn secondary" onclick="resetZoom()" style="padding: 8px 12px;">
+                    100%
+                </button>
+                <button class="action-btn secondary" onclick="zoomIn()" style="padding: 8px 12px;">
+                    <i class="fas fa-search-plus"></i>
+                </button>
+                <span class="table-counter" id="tableCount">{{ tables|length }} stolików</span>
+            </div>
+        </div>
+
+        <canvas id="floorCanvas" width="800" height="600"></canvas>
+
+        <div class="status-legend">
+            <div class="legend-item">
+                <div class="legend-color" style="background: #27AE60;"></div>
+                <div class="legend-label">Wolny</div>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: #E74C3C;"></div>
+                <div class="legend-label">Zajęty</div>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: #F39C12;"></div>
+                <div class="legend-label">Zarezerwowany</div>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: #3498DB;"></div>
+                <div class="legend-label">Sprzątanie</div>
+            </div>
+        </div>
+    </div>
+    <!-- Controls Panel -->
+    <div class="editor-controls-panel">
+        <!-- Nagłówek z klasami CSS -->
+        <div class="panel-header">
+            <h3>Narzędzia</h3>
+            <p>Wybierz narzędzie i edytuj plan sali</p>
+        </div>
+
+        <!-- Toolbar z poprawnymi klasami -->
+        <div class="toolbar-scroll-container">
+            <div class="editor-toolbar">
+                <button class="editor-tool-btn active" id="toolSelect" onclick="setTool('select')">
+                    <div class="editor-tool-icon"><i class="fas fa-mouse-pointer"></i></div>
+                    <div class="editor-tool-label">Wybierz</div>
+                </button>
+                <button class="editor-tool-btn" id="toolMove" onclick="setTool('move')">
+                    <div class="editor-tool-icon"><i class="fas fa-arrows-alt"></i></div>
+                    <div class="editor-tool-label">Przesuń</div>
+                </button>
+                <button class="editor-tool-btn" id="toolTable" onclick="setTool('add')">
+                    <div class="editor-tool-icon"><i class="fas fa-plus"></i></div>
+                    <div class="editor-tool-label">Dodaj</div>
+                </button>
+                <button class="editor-tool-btn" id="toolDelete" onclick="setTool('delete')">
+                    <div class="editor-tool-icon"><i class="fas fa-trash"></i></div>
+                    <div class="editor-tool-label">Usuń</div>
+                </button>
+                <button class="editor-tool-btn" id="toolRotate" onclick="setTool('rotate')">
+                    <div class="editor-tool-icon"><i class="fas fa-sync-alt"></i></div>
+                    <div class="editor-tool-label">Obróć</div>
+                </button>
+                <button class="editor-tool-btn" id="toolResize" onclick="setTool('resize')">
+                    <div class="editor-tool-icon"><i class="fas fa-expand-alt"></i></div>
+                    <div class="editor-tool-label">Rozmiar</div>
+                </button>
+            </div>
+        </div>
+
+
+        <!-- Selected Table Properties -->
+        <div class="selected-info" id="selectedInfo" style="display: none;">
+            <h4 style="margin-bottom: 15px; color: #333;">Właściwości stolika</h4>
+
+            <div class="property-group">
+                <div class="form-group">
+                    <label class="form-label">Numer stolika</label>
+                    <input type="text" id="tableNumber" class="form-control" value="1">
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Liczba miejsc</label>
+                    <input type="number" id="tableSeats" class="form-control" value="4" min="1" max="12">
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Status</label>
+                    <select id="tableStatus" class="form-control">
+                        <option value="free">Wolny</option>
+                        <option value="occupied">Zajęty</option>
+                        <option value="reserved">Zarezerwowany</option>
+                        <option value="cleaning">Sprzątanie</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Kształt</label>
+                    <div style="display: flex; gap: 10px;">
+                        <button class="action-btn secondary" onclick="setShape('rectangle')" id="shapeRect" style="flex: 1;">
+                            Prostokąt
+                        </button>
+                        <button class="action-btn secondary" onclick="setShape('circle')" id="shapeCircle" style="flex: 1;">
+                            Okrągły
+                        </button>
+                    </div>
+                </div>
+
+                <div class="form-group" id="sizeGroup">
+                    <label class="form-label" id="sizeLabel">Rozmiar (px)</label>
+                    <div style="display: flex; gap: 10px;">
+                        <input type="number" id="tableSize1" class="form-control" placeholder="Szerokość" value="100">
+                        <input type="number" id="tableSize2" class="form-control" placeholder="Wysokość" value="80">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Kolor statusu</label>
+                    <div class="color-picker">
+                        <div class="color-option selected" style="background: #27AE60;" onclick="setColor('free')"></div>
+                        <div class="color-option" style="background: #E74C3C;" onclick="setColor('occupied')"></div>
+                        <div class="color-option" style="background: #F39C12;" onclick="setColor('reserved')"></div>
+                        <div class="color-option" style="background: #3498DB;" onclick="setColor('cleaning')"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="action-buttons">
+                <button class="action-btn secondary" onclick="deleteSelectedTable()">
+                    <i class="fas fa-trash"></i> Usuń
+                </button>
+                <button class="action-btn primary" onclick="updateTable()">
+                    <i class="fas fa-save"></i> Zapisz zmiany
+                </button>
+            </div>
+        </div>
+
+        <!-- No Selection Message -->
+        <div id="noSelection" style="text-align: center; padding: 40px 20px; color: #666;">
+            <i class="fas fa-mouse-pointer fa-2x" style="margin-bottom: 15px; color: #ddd;"></i>
+            <p>Kliknij na stolik aby go wybrać</p>
+            <p style="font-size: 14px; margin-top: 10px;">lub użyj narzędzia "Dodaj" aby stworzyć nowy</p>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="action-buttons" style="margin-top: 30px;">
+            <button class="action-btn secondary" onclick="resetToDefault()">
+                <i class="fas fa-undo"></i> Resetuj
+            </button>
+            <button class="action-btn primary" onclick="saveLayout()">
+                <i class="fas fa-save"></i> Zapisz plan
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+// ========== GLOBAL VARIABLES ==========
+let canvas, ctx;
+let tables = {{ tables|tojson|safe }};
+let selectedTable = null;
+let currentTool = 'select';
+let scale = 1;
+let offsetX = 0, offsetY = 0;
+let isDragging = false;
+let dragStartX = 0, dragStartY = 0;
+let showGrid = true;
+let gridSize = 20;
+
+// Status colors
+const statusColors = {
+    'free': '#27AE60',
+    'occupied': '#E74C3C',
+    'reserved': '#F39C12',
+    'cleaning': '#3498DB'
+};
+
+// Status names
+const statusNames = {
+    'free': 'Wolny',
+    'occupied': 'Zajęty',
+    'reserved': 'Zarezerwowany',
+    'cleaning': 'Sprzątanie'
+};
+
+// ========== INITIALIZATION ==========
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('Initializing floor plan editor...');
+    console.log('Tables:', tables);
+
+    // Get canvas element
+    canvas = document.getElementById('floorCanvas');
+    if (!canvas) {
+        console.error('Canvas element not found!');
+        return;
+    }
+
+    ctx = canvas.getContext('2d');
+
+    // Set canvas size
+    resizeCanvas();
+    window.addEventListener('resize', resizeCanvas);
+
+    // Initialize event listeners
+    initEventListeners();
+
+    // Initial draw
+    draw();
+
+    console.log('Floor plan editor initialized successfully');
+});
+
+// ========== CANVAS FUNCTIONS ==========
+function resizeCanvas() {
+    const container = canvas.parentElement;
+    if (container) {
+        canvas.width = container.clientWidth - 40;
+        canvas.height = container.clientHeight - 40;
+        console.log('Canvas resized to:', canvas.width, 'x', canvas.height);
+    }
+}
+
+function initEventListeners() {
+    // Mouse events
+    canvas.addEventListener('mousedown', handleMouseDown);
+    canvas.addEventListener('mousemove', handleMouseMove);
+    canvas.addEventListener('mouseup', handleMouseUp);
+    canvas.addEventListener('wheel', handleWheel);
+
+    // Touch events for tablets
+    canvas.addEventListener('touchstart', handleTouchStart, { passive: false });
+    canvas.addEventListener('touchmove', handleTouchMove, { passive: false });
+    canvas.addEventListener('touchend', handleTouchEnd, { passive: false });
+}
+
+function draw() {
+    // Clear canvas
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // Save context state
+    ctx.save();
+
+    // Apply transformations
+    ctx.translate(offsetX, offsetY);
+    ctx.scale(scale, scale);
+
+    // Draw background
+    drawBackground();
+
+    // Draw grid if enabled
+    if (showGrid) {
+        drawGrid();
+    }
+
+    // Draw all tables
+    tables.forEach(table => {
+        drawTable(table);
+    });
+
+    // Draw selection if table is selected
+    if (selectedTable) {
+        drawSelection(selectedTable);
+    }
+
+    // Restore context state
+    ctx.restore();
+}
+
+function drawBackground() {
+    ctx.fillStyle = '#f8f9fa';
+    ctx.fillRect(0, 0, canvas.width / scale, canvas.height / scale);
+
+    // Draw border
+    ctx.strokeStyle = '#ddd';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(0, 0, canvas.width / scale, canvas.height / scale);
+}
+
+function drawGrid() {
+    ctx.strokeStyle = 'rgba(0,0,0,0.05)';
+    ctx.lineWidth = 1;
+
+    const gridStep = gridSize;
+    const width = canvas.width / scale;
+    const height = canvas.height / scale;
+
+    // Vertical lines
+    for (let x = 0; x <= width; x += gridStep) {
+        ctx.beginPath();
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, height);
+        ctx.stroke();
+    }
+
+    // Horizontal lines
+    for (let y = 0; y <= height; y += gridStep) {
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(width, y);
+        ctx.stroke();
+    }
+}
+
+function drawTable(table) {
+    const { x = 100, y = 100, shape = 'rectangle', status = 'free', number = '1', seats = 4 } = table;
+    const color = statusColors[status] || statusColors.free;
+
+    ctx.save();
+    ctx.translate(x, y);
+
+    // Apply rotation if exists
+    if (table.rotation) {
+        ctx.rotate(table.rotation * Math.PI / 180);
+    }
+
+    // Draw table based on shape
+    if (shape === 'circle') {
+        const radius = table.radius || 50;
+
+        // Draw table
+        ctx.fillStyle = color + '80'; // 50% opacity
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 3;
+
+        ctx.beginPath();
+        ctx.arc(0, 0, radius, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+
+        // Draw seats around the table
+        drawCircleSeats(radius, seats);
+
+    } else { // rectangle
+        const width = table.width || 100;
+        const height = table.height || 80;
+
+        // Draw table
+        ctx.fillStyle = color + '80'; // 50% opacity
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 3;
+
+        ctx.fillRect(-width/2, -height/2, width, height);
+        ctx.strokeRect(-width/2, -height/2, width, height);
+
+        // Draw seats around the table
+        drawRectangleSeats(width, height, seats);
+    }
+
+    // Draw table number
+    ctx.fillStyle = '#333';
+    ctx.font = 'bold 16px Arial';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(number, 0, 0);
+
+    ctx.restore();
+}
+
+function drawCircleSeats(radius, seats) {
+    const chairRadius = 8;
+    const chairDistance = radius + 20;
+
+    for (let i = 0; i < seats; i++) {
+        const angle = (i * 2 * Math.PI) / seats;
+        const chairX = chairDistance * Math.cos(angle);
+        const chairY = chairDistance * Math.sin(angle);
+
+        ctx.fillStyle = '#8B4513';
+        ctx.beginPath();
+        ctx.arc(chairX, chairY, chairRadius, 0, Math.PI * 2);
+        ctx.fill();
+    }
+}
+
+function drawRectangleSeats(width, height, seats) {
+    const chairWidth = 10;
+    const chairHeight = 15;
+
+    // Distribute seats evenly
+    const seatsPerSide = Math.ceil(seats / 4);
+
+    // Top side
+    for (let i = 0; i < seatsPerSide && seats > 0; i++) {
+        const x = -width/2 + (i + 0.5) * (width / seatsPerSide);
+        ctx.fillStyle = '#8B4513';
+        ctx.fillRect(x - chairWidth/2, -height/2 - chairHeight, chairWidth, chairHeight);
+        seats--;
+    }
+
+    // Right side
+    for (let i = 0; i < seatsPerSide && seats > 0; i++) {
+        const y = -height/2 + (i + 0.5) * (height / seatsPerSide);
+        ctx.fillStyle = '#8B4513';
+        ctx.fillRect(width/2, y - chairWidth/2, chairHeight, chairWidth);
+        seats--;
+    }
+
+    // Bottom side
+    for (let i = 0; i < seatsPerSide && seats > 0; i++) {
+        const x = -width/2 + (i + 0.5) * (width / seatsPerSide);
+        ctx.fillStyle = '#8B4513';
+        ctx.fillRect(x - chairWidth/2, height/2, chairWidth, chairHeight);
+        seats--;
+    }
+
+    // Left side
+    for (let i = 0; i < seatsPerSide && seats > 0; i++) {
+        const y = -height/2 + (i + 0.5) * (height / seatsPerSide);
+        ctx.fillStyle = '#8B4513';
+        ctx.fillRect(-width/2 - chairHeight, y - chairWidth/2, chairHeight, chairWidth);
+        seats--;
+    }
+}
+
+function drawSelection(table) {
+    const { x = 100, y = 100, shape = 'rectangle' } = table;
+
+    ctx.save();
+    ctx.translate(x, y);
+
+    if (table.rotation) {
+        ctx.rotate(table.rotation * Math.PI / 180);
+    }
+
+    ctx.strokeStyle = '#FF6B35';
+    ctx.lineWidth = 2;
+    ctx.setLineDash([5, 5]);
+
+    if (shape === 'circle') {
+        const radius = (table.radius || 50) + 5;
+        ctx.beginPath();
+        ctx.arc(0, 0, radius, 0, Math.PI * 2);
+        ctx.stroke();
+    } else {
+        const width = (table.width || 100) + 10;
+        const height = (table.height || 80) + 10;
+        ctx.strokeRect(-width/2, -height/2, width, height);
+    }
+
+    ctx.setLineDash([]);
+    ctx.restore();
+}
+
+// ========== EVENT HANDLERS ==========
+function handleMouseDown(e) {
+    e.preventDefault();
+    console.log('Mouse down at:', e.clientX, e.clientY);
+
+    const rect = canvas.getBoundingClientRect();
+    const x = (e.clientX - rect.left - offsetX) / scale;
+    const y = (e.clientY - rect.top - offsetY) / scale;
+
+    console.log('Canvas coordinates:', x, y);
+    console.log('Current tool:', currentTool);
+
+    if (currentTool === 'move') {
+        // Check if we clicked on a table
+        selectedTable = getTableAtPosition(x, y);
+
+        if (selectedTable) {
+            // Start dragging the table
+            isDragging = true;
+            dragStartX = e.clientX;
+            dragStartY = e.clientY;
+            updateSelectedInfo();
+        } else {
+            // Start panning the view
+            isDragging = true;
+            dragStartX = e.clientX;
+            dragStartY = e.clientY;
+        }
+    } else if (currentTool === 'select') {
+        // Select a table
+        selectedTable = getTableAtPosition(x, y);
+
+        if (selectedTable) {
+            console.log('Selected table:', selectedTable);
+            updateSelectedInfo();
+        } else {
+            selectedTable = null;
+            showNoSelection();
+        }
+    } else if (currentTool === 'add') {
+        // Add new table
+        addNewTable(x, y);
+    } else if (currentTool === 'delete') {
+        // Delete table
+        const tableToDelete = getTableAtPosition(x, y);
+        if (tableToDelete) {
+            if (confirm(`Usunąć stolik ${tableToDelete.number}?`)) {
+                deleteTable(tableToDelete);
+            }
+        }
+    } else if (currentTool === 'rotate') {
+        // Rotate table
+        selectedTable = getTableAtPosition(x, y);
+        if (selectedTable) {
+            selectedTable.rotation = (selectedTable.rotation || 0) + 15;
+            updateSelectedInfo();
+            draw();
+        }
+    } else if (currentTool === 'resize') {
+        // Resize table
+        selectedTable = getTableAtPosition(x, y);
+        if (selectedTable) {
+            if (selectedTable.shape === 'circle') {
+                selectedTable.radius = (selectedTable.radius || 50) + 10;
+            } else {
+                selectedTable.width = (selectedTable.width || 100) + 10;
+                selectedTable.height = (selectedTable.height || 80) + 10;
+            }
+            updateSelectedInfo();
+            draw();
+        }
+    }
+
+    draw();
+}
+
+function handleMouseMove(e) {
+    if (!isDragging) return;
+
+    const deltaX = e.clientX - dragStartX;
+    const deltaY = e.clientY - dragStartY;
+
+    if (selectedTable && currentTool === 'move') {
+        // Move the selected table
+        selectedTable.x += deltaX / scale;
+        selectedTable.y += deltaY / scale;
+        draw();
+    } else {
+        // Pan the view
+        offsetX += deltaX;
+        offsetY += deltaY;
+        draw();
+    }
+
+    dragStartX = e.clientX;
+    dragStartY = e.clientY;
+}
+
+function handleMouseUp() {
+    isDragging = false;
+}
+
+function handleWheel(e) {
+    e.preventDefault();
+
+    const zoomFactor = e.deltaY > 0 ? 0.9 : 1.1;
+    scale = Math.max(0.1, Math.min(5, scale * zoomFactor));
+
+    draw();
+}
+
+function handleTouchStart(e) {
+    e.preventDefault();
+    if (e.touches.length === 1) {
+        const touch = e.touches[0];
+        const mouseEvent = new MouseEvent('mousedown', {
+            clientX: touch.clientX,
+            clientY: touch.clientY
+        });
+        handleMouseDown(mouseEvent);
+    }
+}
+
+function handleTouchMove(e) {
+    e.preventDefault();
+    if (e.touches.length === 1) {
+        const touch = e.touches[0];
+        const mouseEvent = new MouseEvent('mousemove', {
+            clientX: touch.clientX,
+            clientY: touch.clientY
+        });
+        handleMouseMove(mouseEvent);
+    }
+}
+
+function handleTouchEnd(e) {
+    e.preventDefault();
+    handleMouseUp();
+}
+
+// ========== TABLE FUNCTIONS ==========
+function getTableAtPosition(x, y) {
+    // Check tables in reverse order (top-most first)
+    for (let i = tables.length - 1; i >= 0; i--) {
+        const table = tables[i];
+
+        if (table.shape === 'circle') {
+            const radius = table.radius || 50;
+            const distance = Math.sqrt((x - table.x) ** 2 + (y - table.y) ** 2);
+            if (distance <= radius + 10) { // +10 for margin
+                return table;
+            }
+        } else {
+            const width = table.width || 100;
+            const height = table.height || 80;
+
+            // Simple rectangle collision (ignores rotation for now)
+            if (x >= table.x - width/2 - 10 &&
+                x <= table.x + width/2 + 10 &&
+                y >= table.y - height/2 - 10 &&
+                y <= table.y + height/2 + 10) {
+                return table;
+            }
+        }
+    }
+    return null;
+}
+
+function addNewTable(x, y) {
+    const newTable = {
+        id: tables.length + 1,
+        number: (tables.length + 1).toString(),
+        seats: 4,
+        status: 'free',
+        shape: 'rectangle',
+        width: 100,
+        height: 80,
+        x: x,
+        y: y,
+        rotation: 0
+    };
+
+    tables.push(newTable);
+    selectedTable = newTable;
+    updateSelectedInfo();
+    updateTableCount();
+    draw();
+
+    console.log('Added new table:', newTable);
+}
+
+function deleteTable(table) {
+    const index = tables.indexOf(table);
+    if (index > -1) {
+        tables.splice(index, 1);
+        selectedTable = null;
+        showNoSelection();
+        updateTableCount();
+        draw();
+        showToast('success', `Stolik ${table.number} został usunięty`);
+    }
+}
+
+// ========== TOOL FUNCTIONS ==========
+function setTool(tool) {
+    console.log('Setting tool to:', tool);
+
+    currentTool = tool;
+
+    // Update button states
+    document.querySelectorAll('.tool-btn').forEach(btn => {
+        btn.classList.remove('active');
+    });
+
+    const toolBtn = document.getElementById('tool' + tool.charAt(0).toUpperCase() + tool.slice(1));
+    if (toolBtn) {
+        toolBtn.classList.add('active');
+    }
+
+    // Update cursor
+    switch(tool) {
+        case 'select':
+        case 'move':
+            canvas.style.cursor = 'pointer';
+            break;
+        case 'add':
+            canvas.style.cursor = 'crosshair';
+            break;
+        case 'delete':
+            canvas.style.cursor = 'not-allowed';
+            break;
+        default:
+            canvas.style.cursor = 'default';
+    }
+}
+
+// ========== UI FUNCTIONS ==========
+function updateSelectedInfo() {
+    if (!selectedTable) return;
+
+    console.log('Updating info for table:', selectedTable);
+
+    // Show selected info panel
+    document.getElementById('selectedInfo').style.display = 'block';
+    document.getElementById('noSelection').style.display = 'none';
+
+    // Update form values
+    document.getElementById('tableNumber').value = selectedTable.number || '';
+    document.getElementById('tableSeats').value = selectedTable.seats || 4;
+    document.getElementById('tableStatus').value = selectedTable.status || 'free';
+
+    // Update shape buttons
+    const shape = selectedTable.shape || 'rectangle';
+    document.getElementById('shapeRect').classList.toggle('active', shape === 'rectangle');
+    document.getElementById('shapeRect').classList.toggle('secondary', shape !== 'rectangle');
+    document.getElementById('shapeCircle').classList.toggle('active', shape === 'circle');
+    document.getElementById('shapeCircle').classList.toggle('secondary', shape !== 'circle');
+
+    // Update size inputs
+    if (shape === 'circle') {
+        document.getElementById('sizeLabel').textContent = 'Promień (px)';
+        document.getElementById('tableSize1').value = selectedTable.radius || 50;
+        document.getElementById('tableSize1').placeholder = 'Promień';
+        document.getElementById('tableSize2').style.display = 'none';
+    } else {
+        document.getElementById('sizeLabel').textContent = 'Rozmiar (px)';
+        document.getElementById('tableSize1').value = selectedTable.width || 100;
+        document.getElementById('tableSize1').placeholder = 'Szerokość';
+        document.getElementById('tableSize2').value = selectedTable.height || 80;
+        document.getElementById('tableSize2').placeholder = 'Wysokość';
+        document.getElementById('tableSize2').style.display = 'block';
+    }
+
+    // Update color picker
+    updateColorPicker(selectedTable.status || 'free');
+}
+
+function showNoSelection() {
+    document.getElementById('selectedInfo').style.display = 'none';
+    document.getElementById('noSelection').style.display = 'block';
+}
+
+function updateColorPicker(status) {
+    document.querySelectorAll('.color-option').forEach(option => {
+        option.classList.remove('selected');
+    });
+
+    const colorIndex = Object.keys(statusColors).indexOf(status);
+    if (colorIndex >= 0) {
+        document.querySelectorAll('.color-option')[colorIndex].classList.add('selected');
+    }
+}
+
+function setShape(shape) {
+    if (!selectedTable) return;
+
+    selectedTable.shape = shape;
+
+    // Update UI
+    document.getElementById('shapeRect').classList.toggle('active', shape === 'rectangle');
+    document.getElementById('shapeRect').classList.toggle('secondary', shape !== 'rectangle');
+    document.getElementById('shapeCircle').classList.toggle('active', shape === 'circle');
+    document.getElementById('shapeCircle').classList.toggle('secondary', shape !== 'circle');
+
+    // Update size inputs
+    if (shape === 'circle') {
+        if (!selectedTable.radius) selectedTable.radius = 50;
+        document.getElementById('sizeLabel').textContent = 'Promień (px)';
+        document.getElementById('tableSize1').value = selectedTable.radius;
+        document.getElementById('tableSize1').placeholder = 'Promień';
+        document.getElementById('tableSize2').style.display = 'none';
+    } else {
+        if (!selectedTable.width) selectedTable.width = 100;
+        if (!selectedTable.height) selectedTable.height = 80;
+        document.getElementById('sizeLabel').textContent = 'Rozmiar (px)';
+        document.getElementById('tableSize1').value = selectedTable.width;
+        document.getElementById('tableSize1').placeholder = 'Szerokość';
+        document.getElementById('tableSize2').value = selectedTable.height;
+        document.getElementById('tableSize2').placeholder = 'Wysokość';
+        document.getElementById('tableSize2').style.display = 'block';
+    }
+
+    draw();
+}
+
+function setColor(status) {
+    if (!selectedTable) return;
+
+    selectedTable.status = status;
+    document.getElementById('tableStatus').value = status;
+    updateColorPicker(status);
+    draw();
+}
+
+function updateTable() {
+    if (!selectedTable) return;
+
+    // Update table properties from form
+    selectedTable.number = document.getElementById('tableNumber').value;
+    selectedTable.seats = parseInt(document.getElementById('tableSeats').value);
+    selectedTable.status = document.getElementById('tableStatus').value;
+
+    if (selectedTable.shape === 'circle') {
+        selectedTable.radius = parseInt(document.getElementById('tableSize1').value);
+    } else {
+        selectedTable.width = parseInt(document.getElementById('tableSize1').value);
+        selectedTable.height = parseInt(document.getElementById('tableSize2').value);
+    }
+
+    draw();
+    showToast('success', 'Zmiany zapisane');
+}
+
+function deleteSelectedTable() {
+    if (selectedTable) {
+        if (confirm(`Usunąć stolik ${selectedTable.number}?`)) {
+            deleteTable(selectedTable);
+        }
+    }
+}
+
+// ========== ZOOM FUNCTIONS ==========
+function zoomIn() {
+    scale = Math.min(5, scale * 1.2);
+    draw();
+}
+
+function zoomOut() {
+    scale = Math.max(0.1, scale * 0.8);
+    draw();
+}
+
+function resetZoom() {
+    scale = 1;
+    offsetX = 0;
+    offsetY = 0;
+    draw();
+}
+
+// ========== LAYOUT FUNCTIONS ==========
+function updateTableCount() {
+    document.getElementById('tableCount').textContent = tables.length + ' stolików';
+}
+
+function resetToDefault() {
+    if (confirm('Czy na pewno chcesz zresetować układ do domyślnego? Wszystkie zmiany zostaną utracone.')) {
+        // Reload the page to get original tables
+        window.location.reload();
+    }
+}
+
+async function saveLayout() {
+    try {
+        console.log('Saving layout...');
+
+        const response = await fetch('/waiter/floor-plan/{{ restaurant.id }}/save', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                tables: tables,
+                scale: scale,
+                offsetX: offsetX,
+                offsetY: offsetY
+            })
+        });
+
+        const data = await response.json();
+        console.log('Save response:', data);
+
+        if (data.success) {
+            showToast('success', data.message);
+        } else {
+            showToast('error', data.message);
+        }
+    } catch (error) {
+        console.error('Error saving layout:', error);
+        showToast('error', 'Wystąpił błąd podczas zapisywania');
+    }
+}
+
+// ========== UTILITY FUNCTIONS ==========
+function showToast(type, message) {
+    // Create toast element
+    const toast = document.createElement('div');
+    toast.className = `tablet-toast toast-${type}`;
+    toast.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: white;
+        padding: 16px 24px;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        z-index: 1000;
+        border-left: 4px solid ${type === 'success' ? '#27AE60' : '#E74C3C'};
+    `;
+
+    toast.innerHTML = `
+        <i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-circle'}"
+           style="color: ${type === 'success' ? '#27AE60' : '#E74C3C'}"></i>
+        <span>${message}</span>
+    `;
+
+    document.body.appendChild(toast);
+
+    // Auto remove after 3 seconds
+    setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transition = 'opacity 0.3s';
+        setTimeout(() => toast.remove(), 300);
+    }, 3000);
+}
+
+// Initialize with select tool
+setTimeout(() => setTool('select'), 100);
+</script>
+{% endblock %}

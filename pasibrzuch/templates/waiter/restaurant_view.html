@@ -1,0 +1,351 @@
+{% extends "waiter/layout_tablet.html" %}
+
+{% block extra_css %}
+<style>
+    .table-details-panel {
+        position: sticky;
+        top: 20px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="restaurant-view-header">
+    <div class="restaurant-info-header">
+        <div class="restaurant-logo-small">
+            <i class="fas fa-store"></i>
+        </div>
+        <div class="restaurant-title-wrapper">
+            <h1>{{ restaurant.name }}</h1>
+            <p>Zarządzaj rezerwacjami i statusami stolików w czasie rzeczywistym</p>
+        </div>
+        <div class="current-datetime">
+            <div class="current-date" id="currentDate">{{ current_date }}</div>
+            <div class="current-time">{{ current_time }}</div>
+        </div>
+    </div>
+
+    <div class="stats-bar">
+        <div class="stat-card free">
+            <div class="stat-card-number">{{ stats.free }}</div>
+            <div class="stat-card-label">Wolne</div>
+        </div>
+        <div class="stat-card occupied">
+            <div class="stat-card-number">{{ stats.occupied }}</div>
+            <div class="stat-card-label">Zajęte</div>
+        </div>
+        <div class="stat-card reserved">
+            <div class="stat-card-number">{{ stats.reserved }}</div>
+            <div class="stat-card-label">Zarezerwowane</div>
+        </div>
+        <div class="stat-card cleaning">
+            <div class="stat-card-number">{{ stats.cleaning }}</div>
+            <div class="stat-card-label">Sprzątanie</div>
+        </div>
+    </div>
+</div>
+
+
+<div class="floor-plan-container">
+    <!-- Lewa kolumna: Plan sali -->
+    <div class="floor-plan">
+        <div class="floor-plan-header">
+            <h2>Plan Sali</h2>
+            <div class="status-legend">
+                <div class="legend-item">
+                    <div class="legend-color free"></div>
+                    <div class="legend-label">Wolny</div>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color occupied"></div>
+                    <div class="legend-label">Zajęty</div>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color reserved"></div>
+                    <div class="legend-label">Zarezerwowany</div>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color cleaning"></div>
+                    <div class="legend-label">Sprzątanie</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="table-grid" id="tableGrid">
+            {% for table in tables %}
+            <div class="table-item {{ table.status }}"
+                 data-table-id="{{ table.id }}"
+                 onclick="selectTable(this)">
+                <div class="table-number">Stolik nr {{ table.number }}</div>
+                <div class="table-details">
+                    <div><i class="fas fa-chair"></i> {{ table.seats }} miejsc</div>
+                    <div><i class="fas fa-map-marker-alt"></i> {{ table.location }}</div>
+                </div>
+                <div class="table-status {{ table.status }}">
+                    {% if table.status == 'free' %}Wolny
+                    {% elif table.status == 'occupied' %}Zajęty
+                    {% elif table.status == 'reserved' %}Zarezerwowany
+                    {% elif table.status == 'cleaning' %}Sprzątanie
+                    {% endif %}
+                </div>
+
+                {% if table.reservation %}
+                <div style="margin-top: 8px; font-size: 12px; color: var(--warning);">
+                    <i class="fas fa-clock"></i> {{ table.reservation.time }}
+                </div>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Prawa kolumna: Szczegóły stolika -->
+    <div class="table-details-panel" id="tableDetailsPanel">
+        <div class="panel-header">
+            <h3 id="selectedTableTitle">Wybierz stolik</h3>
+            <p id="selectedTableSubtitle">Kliknij na stolik aby zobaczyć szczegóły</p>
+        </div>
+
+        <div id="tableDetails" style="display: none;">
+            <div class="table-info">
+                <div class="info-row">
+                    <span class="info-label">Numer stolika:</span>
+                    <span class="info-value" id="tableNumber">-</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Liczba miejsc:</span>
+                    <span class="info-value" id="tableSeats">-</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Lokalizacja:</span>
+                    <span class="info-value" id="tableLocation">-</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Status:</span>
+                    <span class="info-value" id="tableStatus">-</span>
+                </div>
+            </div>
+
+            <!-- Szczegóły rezerwacji -->
+            <div id="reservationInfo" style="display: none;">
+                <div class="reservation-details">
+                    <div class="reservation-time" id="reservationTime">-</div>
+                    <div class="reservation-name" id="reservationName">-</div>
+                    <div style="margin-bottom: 8px;" id="reservationPeople">- osób</div>
+                    <div class="reservation-notes" id="reservationNotes">-</div>
+                </div>
+            </div>
+
+            <!-- Akcje dla stolika -->
+            <div class="action-buttons">
+                <button class="action-btn primary" onclick="changeStatus('occupied')">
+                    <i class="fas fa-check-circle"></i> Oznacz jako zajęty
+                </button>
+                <button class="action-btn secondary" onclick="changeStatus('free')">
+                    <i class="fas fa-times-circle"></i> Zwolnij stolik
+                </button>
+                <button class="action-btn secondary" onclick="changeStatus('cleaning')">
+                    <i class="fas fa-broom"></i> Wymaga sprzątania
+                </button>
+                <button class="action-btn primary" onclick="sendNotification()">
+                    <i class="fas fa-bell"></i> Wyślij powiadomienie
+                </button>
+            </div>
+        </div>
+
+        <!-- Nadchodzące rezerwacje -->
+        <div class="upcoming-reservations">
+            <h3 style="margin-bottom: 16px; color: var(--dark);">Nadchodzące rezerwacje</h3>
+            <div class="reservation-list">
+                {% for reservation in upcoming_reservations %}
+                <div class="reservation-item">
+                    <div class="reservation-time-badge">{{ reservation.time }}</div>
+                    <div class="reservation-info">
+                        <div class="reservation-customer">{{ reservation.name }}</div>
+                        <div class="reservation-desc">
+                            Stolik {{ reservation.table }} • {{ reservation.people }} osób
+                            {% if reservation.notes %}
+                            <div style="margin-top: 4px; color: var(--warning); font-size: 13px;">
+                                <i class="fas fa-sticky-note"></i> {{ reservation.notes }}
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let selectedTable = null;
+let selectedTableData = null;
+
+function selectTable(tableElement) {
+    // Usuń podświetlenie z wszystkich stolików
+    document.querySelectorAll('.table-item').forEach(item => {
+        item.style.boxShadow = 'none';
+        item.style.border = '2px solid transparent';
+    });
+
+    // Podświetl wybrany stolik
+    tableElement.style.boxShadow = '0 0 0 3px var(--primary-orange)';
+    tableElement.style.border = '2px solid var(--primary-orange)';
+
+    // Pobierz dane stolika
+    selectedTable = tableElement;
+    selectedTableData = {
+        id: tableElement.getAttribute('data-table-id'),
+        number: tableElement.querySelector('.table-number').textContent.replace('Stolik nr ', ''),
+        seats: tableElement.querySelector('.table-details div:first-child').textContent.replace(' miejsc', ''),
+        location: tableElement.querySelector('.table-details div:nth-child(2)').textContent.replace(' ', ''),
+        status: tableElement.classList[1] // free, occupied, reserved, cleaning
+    };
+
+    // Aktualizuj panel szczegółów
+    updateTableDetails();
+}
+
+function updateTableDetails() {
+    const detailsPanel = document.getElementById('tableDetails');
+    const reservationInfo = document.getElementById('reservationInfo');
+
+    // Aktualizuj tytuł
+    document.getElementById('selectedTableTitle').textContent = `Stolik nr ${selectedTableData.number}`;
+    document.getElementById('selectedTableSubtitle').textContent = `${selectedTableData.seats} • ${selectedTableData.location}`;
+
+    // Aktualizuj szczegóły
+    document.getElementById('tableNumber').textContent = selectedTableData.number;
+    document.getElementById('tableSeats').textContent = selectedTableData.seats;
+    document.getElementById('tableLocation').textContent = selectedTableData.location;
+
+    // Status z polską nazwą
+    let statusText = '';
+    switch(selectedTableData.status) {
+        case 'free': statusText = 'Wolny'; break;
+        case 'occupied': statusText = 'Zajęty'; break;
+        case 'reserved': statusText = 'Zarezerwowany'; break;
+        case 'cleaning': statusText = 'Sprzątanie'; break;
+    }
+    document.getElementById('tableStatus').textContent = statusText;
+
+    // Pokaż szczegóły rezerwacji jeśli istnieją
+    const reservationTime = selectedTable.querySelector('.fa-clock')?.parentElement?.textContent?.trim();
+    if (reservationTime) {
+        document.getElementById('reservationTime').textContent = reservationTime;
+        // Tutaj w rzeczywistej aplikacji pobieralibyśmy dane rezerwacji z serwera
+        reservationInfo.style.display = 'block';
+    } else {
+        reservationInfo.style.display = 'none';
+    }
+
+    // Pokaż panel szczegółów
+    detailsPanel.style.display = 'block';
+}
+
+async function changeStatus(newStatus) {
+    if (!selectedTable) {
+        alert('Wybierz najpierw stolik');
+        return;
+    }
+
+    try {
+        const response = await fetch(`/waiter/table/${selectedTableData.id}/update`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                status: newStatus
+            })
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+            // Aktualizuj UI
+            selectedTable.classList.remove('free', 'occupied', 'reserved', 'cleaning');
+            selectedTable.classList.add(newStatus);
+
+            selectedTable.querySelector('.table-status').className = `table-status ${newStatus}`;
+            selectedTable.querySelector('.table-status').textContent =
+                newStatus === 'free' ? 'Wolny' :
+                newStatus === 'occupied' ? 'Zajęty' :
+                newStatus === 'reserved' ? 'Zarezerwowany' : 'Sprzątanie';
+
+            // Aktualizuj dane
+            selectedTableData.status = newStatus;
+            updateTableDetails();
+
+            // Pokaż potwierdzenie
+            showToast('success', data.message);
+        } else {
+            showToast('danger', 'Błąd: ' + data.message);
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        showToast('danger', 'Wystąpił błąd podczas aktualizacji');
+    }
+}
+
+async function sendNotification() {
+    if (!selectedTable) {
+        alert('Wybierz najpierw stolik');
+        return;
+    }
+
+    const message = prompt('Wpisz wiadomość powiadomienia:', `Stolik ${selectedTableData.number} wymaga uwagi`);
+
+    if (message) {
+        try {
+            const response = await fetch('/waiter/notification', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    table_id: selectedTableData.id,
+                    message: message
+                })
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                showToast('success', data.message);
+            } else {
+                showToast('danger', 'Błąd: ' + data.message);
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            showToast('danger', 'Wystąpił błąd podczas wysyłania');
+        }
+    }
+}
+
+function showToast(type, message) {
+    const toast = document.createElement('div');
+    toast.className = `tablet-toast toast-${type}`;
+    toast.innerHTML = `
+        <i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-circle'}"></i>
+        ${message}
+    `;
+
+    document.querySelector('.tablet-main').appendChild(toast);
+
+    setTimeout(() => {
+        toast.style.opacity = '0';
+        setTimeout(() => toast.remove(), 300);
+    }, 3000);
+}
+
+// Automatycznie wybierz pierwszy stolik
+document.addEventListener('DOMContentLoaded', function() {
+    const firstTable = document.querySelector('.table-item');
+    if (firstTable) {
+        setTimeout(() => selectTable(firstTable), 100);
+    }
+});
+</script>
+{% endblock %}

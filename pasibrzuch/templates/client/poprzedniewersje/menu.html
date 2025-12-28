@@ -1,0 +1,255 @@
+{% extends "client/layout.html" %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Nagłówek restauracji -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card bg-light">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h1 class="h3 mb-1">{{ restaurant.name }}</h1>
+                            <p class="text-muted mb-0">
+                                <i class="bi bi-geo-alt"></i> {{ restaurant.address }}
+                                <span class="ms-3"><i class="bi bi-clock"></i> {{ restaurant.opening_hours }}</span>
+                            </p>
+                        </div>
+                        <div class="text-end">
+                            <div class="display-6 text-warning">
+                                <i class="bi bi-star-fill"></i> {{ restaurant.rating }}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filtr menu -->
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <div class="input-group">
+                <input type="text" class="form-control" placeholder="Szukaj dania..."
+                       value="{{ search_query }}" id="searchMenu">
+                <button class="btn btn-primary" onclick="searchMenu()">
+                    <i class="bi bi-search"></i> Szukaj
+                </button>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <select class="form-select" id="categoryFilter" onchange="filterByCategory()">
+                <option value="all" {% if selected_category == 'all' %}selected{% endif %}>Wszystkie kategorie</option>
+                {% for category in categories %}
+                <option value="{{ category }}" {% if selected_category == category %}selected{% endif %}>
+                    {{ category }}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+    </div>
+
+    <!-- Kategorie menu -->
+    <div class="row mb-3">
+        <div class="col-12">
+            <div class="d-flex flex-wrap gap-2">
+                <a href="{{ url_for('client_menu', restaurant_id=restaurant.id, category='all') }}"
+                   class="btn btn-sm {% if selected_category == 'all' %}btn-primary{% else %}btn-outline-primary{% endif %}">
+                    Wszystkie
+                </a>
+                {% for category in categories %}
+                <a href="{{ url_for('client_menu', restaurant_id=restaurant.id, category=category) }}"
+                   class="btn btn-sm {% if selected_category == category %}btn-primary{% else %}btn-outline-primary{% endif %}">
+                    {{ category }}
+                </a>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Menu -->
+    <div class="row" id="menuItems">
+        {% for item in menu_items %}
+        <div class="col-lg-4 col-md-6 mb-4 menu-item-card" data-category="{{ item.category }}">
+            <div class="card h-100 menu-item">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <h5 class="card-title mb-0">{{ item.name }}</h5>
+                        <span class="badge bg-primary fs-6">{{ item.price }} zł</span>
+                    </div>
+
+                    <p class="card-text text-muted small mb-3">{{ item.description }}</p>
+
+                    {% if item.allergens %}
+                    <div class="mb-3">
+                        <small class="text-muted">Alergeny:</small>
+                        <div class="d-flex flex-wrap gap-1 mt-1">
+                            {% for allergen in item.allergens %}
+                            <span class="badge bg-light text-dark border">{{ allergen }}</span>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            {% if item.available %}
+                            <span class="badge bg-success">Dostępne</span>
+                            {% else %}
+                            <span class="badge bg-secondary">Niedostępne</span>
+                            {% endif %}
+                        </div>
+
+                        <div class="btn-group" role="group">
+                            <button type="button" class="btn btn-sm btn-outline-primary"
+                                    onclick="addToOrder({{ item.id }}, '{{ item.name }}', {{ item.price }})">
+                                <i class="bi bi-cart-plus"></i> Dodaj
+                            </button>
+                            <button type="button" class="btn btn-sm btn-outline-success"
+                                    onclick="addToReservation({{ item.id }}, '{{ item.name }}')">
+                                <i class="bi bi-plus-circle"></i> Do rezerwacji
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+
+        {% if not menu_items %}
+        <div class="col-12">
+            <div class="text-center py-5">
+                <i class="bi bi-menu-up display-4 text-muted"></i>
+                <h4 class="text-muted mt-3">Brak dań w tej kategorii</h4>
+                <a href="{{ url_for('client_menu', restaurant_id=restaurant.id, category='all') }}"
+                   class="btn btn-primary mt-2">Zobacz całe menu</a>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Koszyk do rezerwacji -->
+    <div class="row mt-5">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0"><i class="bi bi-cart me-2"></i> Wybrane dania do rezerwacji</h5>
+                </div>
+                <div class="card-body">
+                    <div id="reservationItems" class="mb-3">
+                        <p class="text-muted">Brak wybranych dań</p>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <a href="{{ url_for('client_reservation', restaurant_id=restaurant.id) }}"
+                           class="btn btn-info">
+                            <i class="bi bi-calendar-check"></i> Przejdź do rezerwacji
+                        </a>
+                        <button class="btn btn-outline-secondary" onclick="clearReservationItems()">
+                            <i class="bi bi-trash"></i> Wyczyść
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let reservationItems = JSON.parse(localStorage.getItem('reservationItems_' + {{ restaurant.id }}) || '[]');
+let orderItems = JSON.parse(localStorage.getItem('orderItems_' + {{ restaurant.id }}) || '[]');
+
+function updateReservationDisplay() {
+    const container = document.getElementById('reservationItems');
+
+    if (reservationItems.length === 0) {
+        container.innerHTML = '<p class="text-muted">Brak wybranych dań</p>';
+        return;
+    }
+
+    let html = '<div class="list-group">';
+    reservationItems.forEach(item => {
+        html += `
+            <div class="list-group-item d-flex justify-content-between align-items-center">
+                <div>
+                    <strong>${item.name}</strong>
+                </div>
+                <button class="btn btn-sm btn-outline-danger" onclick="removeFromReservation(${item.id})">
+                    <i class="bi bi-trash"></i>
+                </button>
+            </div>
+        `;
+    });
+    html += '</div>';
+    container.innerHTML = html;
+}
+
+function addToReservation(itemId, itemName) {
+    if (!reservationItems.find(item => item.id === itemId)) {
+        reservationItems.push({ id: itemId, name: itemName });
+        localStorage.setItem('reservationItems_' + {{ restaurant.id }}, JSON.stringify(reservationItems));
+        updateReservationDisplay();
+        showAlert('Dodano do rezerwacji!', 'success');
+    }
+}
+
+function removeFromReservation(itemId) {
+    reservationItems = reservationItems.filter(item => item.id !== itemId);
+    localStorage.setItem('reservationItems_' + {{ restaurant.id }}, JSON.stringify(reservationItems));
+    updateReservationDisplay();
+}
+
+function clearReservationItems() {
+    reservationItems = [];
+    localStorage.removeItem('reservationItems_' + {{ restaurant.id }});
+    updateReservationDisplay();
+    showAlert('Wyczyszczono listę rezerwacji', 'info');
+}
+
+function addToOrder(itemId, itemName, itemPrice) {
+    orderItems.push({ id: itemId, name: itemName, price: itemPrice, quantity: 1 });
+    localStorage.setItem('orderItems_' + {{ restaurant.id }}, JSON.stringify(orderItems));
+    showAlert('Dodano do zamówienia!', 'success');
+}
+
+function searchMenu() {
+    const searchText = document.getElementById('searchMenu').value.toLowerCase();
+    const items = document.querySelectorAll('.menu-item-card');
+
+    items.forEach(item => {
+        const title = item.querySelector('.card-title').textContent.toLowerCase();
+        const description = item.querySelector('.card-text').textContent.toLowerCase();
+
+        if (title.includes(searchText) || description.includes(searchText) || searchText === '') {
+            item.style.display = 'block';
+        } else {
+            item.style.display = 'none';
+        }
+    });
+}
+
+function filterByCategory() {
+    const category = document.getElementById('categoryFilter').value;
+    window.location.href = `{{ url_for('client_menu', restaurant_id=restaurant.id) }}?category=${category}`;
+}
+
+function showAlert(message, type) {
+    const alertDiv = document.createElement('div');
+    alertDiv.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
+    alertDiv.style.top = '20px';
+    alertDiv.style.right = '20px';
+    alertDiv.style.zIndex = '1000';
+    alertDiv.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    document.body.appendChild(alertDiv);
+
+    setTimeout(() => {
+        alertDiv.remove();
+    }, 3000);
+}
+
+// Inicjalizacja
+document.addEventListener('DOMContentLoaded', updateReservationDisplay);
+</script>
+{% endblock %}

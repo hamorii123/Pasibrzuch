@@ -1,0 +1,65 @@
+{% extends "waiter/layout_tablet.html" %}
+
+{% block content %}
+<div class="dashboard-header">
+    <h1>Witaj, {{ user_name }}! 👋</h1>
+    <p>Panel zarządzania restauracjami w czasie rzeczywistym</p>
+</div>
+
+<div class="restaurant-grid">
+    {% for restaurant in restaurants %}
+    <a href="{{ url_for('waiter_restaurant_view', restaurant_id=restaurant.id) }}" class="restaurant-card-tablet">
+        <h3>{{ restaurant.name }}</h3>
+        <div class="restaurant-info">
+            <div>
+                <div class="restaurant-address">
+                    <i class="fas fa-map-marker-alt"></i> {{ restaurant.address }}
+                </div>
+                <div style="margin-top: 8px;">
+                    <span style="background: #e7f3ff; color: #0066cc; padding: 4px 12px; border-radius: 20px; font-size: 14px;">
+                        {{ restaurant.cuisine }}
+                    </span>
+                </div>
+            </div>
+            <div class="restaurant-rating">
+                <i class="fas fa-star"></i> {{ restaurant.rating }}
+            </div>
+        </div>
+
+        <div class="restaurant-stats">
+            <div class="stat">
+                <div class="stat-number">7</div>
+                <div class="stat-label">Wolne</div>
+            </div>
+            <div class="stat">
+                <div class="stat-number">3</div>
+                <div class="stat-label">Zajęte</div>
+            </div>
+            <div class="stat">
+                <div class="stat-number">1</div>
+                <div class="stat-label">Sprzątanie</div>
+            </div>
+        </div>
+    </a>
+    {% endfor %}
+</div>
+
+<div style="margin-top: 40px; background: white; border-radius: 12px; padding: 24px; box-shadow: 0 4px 12px rgba(0,0,0,0.08);">
+    <h2 style="margin-bottom: 20px; color: var(--dark);">Szybkie statystyki</h2>
+
+    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px;">
+        <div style="text-align: center;">
+            <div style="font-size: 32px; font-weight: 700; color: var(--success);">12</div>
+            <div style="font-size: 14px; color: var(--gray);">Aktywnych rezerwacji</div>
+        </div>
+        <div style="text-align: center;">
+            <div style="font-size: 32px; font-weight: 700; color: var(--danger);">8</div>
+            <div style="font-size: 14px; color: var(--gray);">Stolików zajętych</div>
+        </div>
+        <div style="text-align: center;">
+            <div style="font-size: 32px; font-weight: 700; color: var(--warning);">4</div>
+            <div style="font-size: 14px; color: var(--gray);">Nadchodzących</div>
+        </div>
+    </div>
+</div>
+{% endblock %}

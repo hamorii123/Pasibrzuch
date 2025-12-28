@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>P@SIBRZUCH - Panel Klienta</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.1/font/bootstrap-icons.css">
+    <style>
+        :root {
+            --primary-orange: #FF6B35;
+            --secondary-orange: #FF8C42;
+            --light-orange: #FFA95C;
+            --dark-orange: #E55A2B;
+            --white: #FFFFFF;
+            --light-gray: #F8F9FA;
+        }
+
+        body {
+            background-color: var(--light-gray);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        .sidebar {
+            min-height: 100vh;
+            background: linear-gradient(135deg, var(--primary-orange), var(--dark-orange));
+            color: white;
+            position: fixed;
+            width: 250px;
+        }
+
+        .main-content {
+            margin-left: 250px;
+            padding: 20px;
+        }
+
+        .nav-link {
+            color: rgba(255,255,255,0.9);
+            padding: 12px 20px;
+            margin: 5px 10px;
+            border-radius: 8px;
+            transition: all 0.3s;
+        }
+
+        .nav-link:hover, .nav-link.active {
+            background-color: rgba(255,255,255,0.2);
+            color: white;
+        }
+
+        .card {
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+            border: none;
+            margin-bottom: 20px;
+        }
+
+        .btn-primary {
+            background-color: var(--primary-orange);
+            border-color: var(--primary-orange);
+        }
+
+        .btn-primary:hover {
+            background-color: var(--dark-orange);
+            border-color: var(--dark-orange);
+        }
+
+        .restaurant-card {
+            border-left: 5px solid var(--primary-orange);
+            transition: transform 0.3s;
+        }
+
+        .restaurant-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .menu-item {
+            border-left: 4px solid var(--primary-orange);
+            padding-left: 15px;
+        }
+
+        .table-status {
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: bold;
+        }
+
+        .status-free { background-color: #d4edda; color: #155724; }
+        .status-occupied { background-color: #f8d7da; color: #721c24; }
+        .status-reserved { background-color: #cce5ff; color: #004085; }
+
+        @media (max-width: 768px) {
+            .sidebar {
+                position: relative;
+                width: 100%;
+                min-height: auto;
+            }
+            .main-content {
+                margin-left: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="d-flex">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="p-4">
+                <h3 class="mb-4">
+                    <i class="bi bi-egg-fried"></i> P@<strong>SIBRZUCH</strong>
+                </h3>
+                <div class="mb-4">
+                    <div class="d-flex align-items-center">
+                        <i class="bi bi-person-circle fs-4 me-2"></i>
+                        <div>
+                            <div class="fw-bold">{{ session.user_name }}</div>
+                            <small class="text-light">Klient</small>
+                        </div>
+                    </div>
+                </div>
+
+                <ul class="nav flex-column">
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.endpoint == 'client_dashboard' %}active{% endif %}"
+                           href="{{ url_for('client_dashboard') }}">
+                            <i class="bi bi-speedometer2 me-2"></i> Dashboard
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.endpoint == 'client_restaurants' %}active{% endif %}"
+                           href="{{ url_for('client_restaurants') }}">
+                            <i class="bi bi-shop me-2"></i> Restauracje
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.endpoint == 'client_menu' %}active{% endif %}"
+                           href="{{ url_for('client_restaurants') }}">
+                            <i class="bi bi-menu-button-wide me-2"></i> Menu
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.endpoint == 'client_reservation' %}active{% endif %}"
+                           href="{{ url_for('client_restaurants') }}">
+                            <i class="bi bi-calendar-check me-2"></i> Rezerwacja
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.endpoint == 'client_order' %}active{% endif %}"
+                           href="{{ url_for('client_restaurants') }}">
+                            <i class="bi bi-bag me-2"></i> Zamówienie
+                        </a>
+                    </li>
+                    <li class="nav-item mt-4">
+                        <a class="nav-link" href="{{ url_for('logout') }}">
+                            <i class="bi bi-box-arrow-right me-2"></i> Wyloguj
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content flex-grow-1">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+
+            {% block content %}{% endblock %}
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Proste funkcje JavaScript
+        function formatPrice(price) {
+            return parseFloat(price).toFixed(2) + ' zł';
+        }
+
+        function updateTotal() {
+            let total = 0;
+            document.querySelectorAll('.item-total').forEach(element => {
+                total += parseFloat(element.textContent) || 0;
+            });
+            document.getElementById('order-total').textContent = formatPrice(total);
+        }
+    </script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

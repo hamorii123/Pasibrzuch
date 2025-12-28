@@ -1,0 +1,191 @@
+{% extends "client/layout.html" %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-12">
+            <h1 class="h3">Witaj, {{ session.user_name }}!</h1>
+            <p class="text-muted">Twoje rezerwacje i zamówienia</p>
+        </div>
+    </div>
+
+    <!-- Statystyki -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted mb-0">Aktywne rezerwacje</h6>
+                            <h3 class="mb-0">{{ reservations|length }}</h3>
+                        </div>
+                        <div class="bg-primary bg-opacity-10 p-3 rounded">
+                            <i class="bi bi-calendar-check text-primary fs-4"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted mb-0">Zamówienia</h6>
+                            <h3 class="mb-0">{{ orders|length }}</h3>
+                        </div>
+                        <div class="bg-success bg-opacity-10 p-3 rounded">
+                            <i class="bi bi-bag-check text-success fs-4"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted mb-0">Ulubione restauracje</h6>
+                            <h3 class="mb-0">{{ restaurants|length }}</h3>
+                        </div>
+                        <div class="bg-warning bg-opacity-10 p-3 rounded">
+                            <i class="bi bi-star text-warning fs-4"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted mb-0">Saldo</h6>
+                            <h3 class="mb-0">0 zł</h3>
+                        </div>
+                        <div class="bg-info bg-opacity-10 p-3 rounded">
+                            <i class="bi bi-wallet2 text-info fs-4"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Aktywne rezerwacje -->
+    <div class="row">
+        <div class="col-lg-6">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="bi bi-calendar-check me-2"></i> Nadchodzące rezerwacje</h5>
+                </div>
+                <div class="card-body">
+                    {% if reservations %}
+                    <div class="list-group list-group-flush">
+                        {% for res in reservations[:3] %}
+                        <div class="list-group-item">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="mb-1">{{ res.restaurant_name }}</h6>
+                                    <small class="text-muted">
+                                        <i class="bi bi-calendar me-1"></i>{{ res.date }} o {{ res.time }}
+                                        <i class="bi bi-people ms-2 me-1"></i>{{ res.people }} osoby
+                                    </small>
+                                    <div class="mt-1">
+                                        <span class="badge bg-info">Stolik {{ res.table_number }}</span>
+                                        <span class="badge bg-{% if res.status == 'potwierdzona' %}success{% else %}warning{% endif %} ms-1">
+                                            {{ res.status }}
+                                        </span>
+                                    </div>
+                                </div>
+                                <a href="#" class="btn btn-sm btn-outline-primary">Szczegóły</a>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="text-center py-4">
+                        <i class="bi bi-calendar-x display-4 text-muted"></i>
+                        <p class="text-muted mt-2">Brak nadchodzących rezerwacji</p>
+                        <a href="{{ url_for('client_restaurants') }}" class="btn btn-primary">Zarezerwuj stolik</a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Ostatnie zamówienia -->
+        <div class="col-lg-6">
+            <div class="card">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0"><i class="bi bi-bag-check me-2"></i> Ostatnie zamówienia</h5>
+                </div>
+                <div class="card-body">
+                    {% if orders %}
+                    <div class="list-group list-group-flush">
+                        {% for order in orders[:3] %}
+                        <div class="list-group-item">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="mb-1">{{ order.restaurant_name }}</h6>
+                                    <small class="text-muted">
+                                        <i class="bi bi-clock me-1"></i>{{ order.created_at[:10] }}
+                                        <i class="bi bi-cash ms-2 me-1"></i>{{ order.total_amount }} zł
+                                    </small>
+                                    <div class="mt-1">
+                                        <span class="badge bg-secondary">{{ order.status }}</span>
+                                    </div>
+                                </div>
+                                <a href="#" class="btn btn-sm btn-outline-success">Szczegóły</a>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="text-center py-4">
+                        <i class="bi bi-bag display-4 text-muted"></i>
+                        <p class="text-muted mt-2">Brak ostatnich zamówień</p>
+                        <a href="{{ url_for('client_restaurants') }}" class="btn btn-success">Zamów jedzenie</a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Polecane restauracje -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-star me-2"></i> Polecane restauracje</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        {% for restaurant in restaurants[:4] %}
+                        <div class="col-md-3 mb-3">
+                            <div class="card restaurant-card h-100">
+                                <div class="card-body">
+                                    <h6 class="card-title">{{ restaurant.name }}</h6>
+                                    <p class="card-text small text-muted">{{ restaurant.cuisine }}</p>
+                                    <div class="mb-2">
+                                        <span class="badge bg-warning text-dark">
+                                            <i class="bi bi-star-fill"></i> {{ restaurant.rating }}
+                                        </span>
+                                    </div>
+                                    <a href="{{ url_for('client_menu', restaurant_id=restaurant.id) }}"
+                                       class="btn btn-sm btn-outline-primary w-100">
+                                        Zobacz menu
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,246 @@
+{% extends "mobile_layout.html" %}
+
+{% block title %}Profil{% endblock %}
+
+{% block extra_css %}
+<style>
+.profile-container {
+    padding: 16px;
+}
+
+.profile-header {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    margin-bottom: 30px;
+    padding: 20px;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.profile-avatar {
+    width: 80px;
+    height: 80px;
+    background: linear-gradient(135deg, #FF6B35, #FF8C42);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 32px;
+}
+
+.profile-info h2 {
+    margin: 0 0 8px 0;
+    color: #333;
+}
+
+.profile-info p {
+    margin: 0;
+    color: #666;
+}
+
+.profile-section {
+    background: white;
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.profile-section h3 {
+    margin: 0 0 16px 0;
+    color: #333;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.section-link {
+    color: #FF6B35;
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.reservation-item, .order-item {
+    padding: 16px 0;
+    border-bottom: 1px solid #eee;
+}
+
+.reservation-item:last-child, .order-item:last-child {
+    border-bottom: none;
+}
+
+.reservation-title, .order-title {
+    font-weight: 600;
+    margin-bottom: 4px;
+    color: #333;
+}
+
+.reservation-details, .order-details {
+    color: #666;
+    font-size: 14px;
+    margin-bottom: 8px;
+}
+
+.status-badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.status-confirmed {
+    background: #d4edda;
+    color: #155724;
+}
+
+.status-pending {
+    background: #fff3cd;
+    color: #856404;
+}
+
+.status-delivered {
+    background: #d1ecf1;
+    color: #0c5460;
+}
+
+.profile-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-top: 20px;
+}
+
+.action-btn {
+    padding: 12px;
+    border: 1px solid #ddd;
+    border-radius: 12px;
+    background: white;
+    text-align: center;
+    text-decoration: none;
+    color: #333;
+}
+
+.action-btn i {
+    display: block;
+    font-size: 24px;
+    margin-bottom: 8px;
+    color: #FF6B35;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="profile-container">
+    <!-- Nagłówek profilu -->
+    <div class="profile-header">
+        <div class="profile-avatar">
+            <i class="fas fa-user"></i>
+        </div>
+        <div class="profile-info">
+            <h2>{{ user.name }}</h2>
+            <p>{{ user.email }}</p>
+            <p style="margin-top: 8px;">
+                <span style="background: #e7f3ff; color: #0066cc; padding: 4px 12px; border-radius: 20px; font-size: 14px;">
+                    Klient
+                </span>
+            </p>
+        </div>
+    </div>
+
+    <!-- Szybkie akcje -->
+    <div class="profile-actions">
+        <a href="{{ url_for('client_reservation', restaurant_id=1) }}" class="action-btn">
+            <i class="fas fa-calendar-alt"></i>
+            <span>Zarezerwuj</span>
+        </a>
+        <a href="{{ url_for('client_restaurants') }}" class="action-btn">
+            <i class="fas fa-shopping-bag"></i>
+            <span>Zamów</span>
+        </a>
+    </div>
+
+    <!-- Rezerwacje -->
+    <div class="profile-section">
+        <h3>
+            Moje rezerwacje
+            <a href="#" class="section-link">Wszystkie</a>
+        </h3>
+
+        {% if reservations %}
+            {% for res in reservations %}
+            <div class="reservation-item">
+                <div class="reservation-title">{{ res.restaurant_name }}</div>
+                <div class="reservation-details">
+                    {{ res.date }} o {{ res.time }} • {{ res.people }} osoby
+                </div>
+                <div>
+                    <span class="status-badge {% if res.status == 'Potwierdzona' %}status-confirmed{% else %}status-pending{% endif %}">
+                        {{ res.status }}
+                    </span>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <p style="color: #666; text-align: center; padding: 20px 0;">
+                Brak rezerwacji
+            </p>
+        {% endif %}
+    </div>
+
+    <!-- Zamówienia -->
+    <div class="profile-section">
+        <h3>
+            Moje zamówienia
+            <a href="#" class="section-link">Wszystkie</a>
+        </h3>
+
+        {% if orders %}
+            {% for order in orders %}
+            <div class="order-item">
+                <div class="order-title">{{ order.restaurant_name }}</div>
+                <div class="order-details">
+                    {{ order.date }} • {{ "%.2f"|format(order.total) }} zł
+                </div>
+                <div>
+                    <span class="status-badge {% if order.status == 'Dostarczone' %}status-delivered{% else %}status-pending{% endif %}">
+                        {{ order.status }}
+                    </span>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <p style="color: #666; text-align: center; padding: 20px 0;">
+                Brak zamówień
+            </p>
+        {% endif %}
+    </div>
+
+    <!-- Ustawienia -->
+    <div class="profile-section">
+        <h3>Ustawienia</h3>
+        <div style="display: flex; flex-direction: column; gap: 12px;">
+            <a href="#" style="display: flex; justify-content: space-between; align-items: center; padding: 12px 0; text-decoration: none; color: #333; border-bottom: 1px solid #eee;">
+                <span><i class="fas fa-cog" style="margin-right: 12px; color: #666;"></i> Ustawienia konta</span>
+                <i class="fas fa-chevron-right" style="color: #999;"></i>
+            </a>
+            <a href="#" style="display: flex; justify-content: space-between; align-items: center; padding: 12px 0; text-decoration: none; color: #333; border-bottom: 1px solid #eee;">
+                <span><i class="fas fa-map-marker-alt" style="margin-right: 12px; color: #666;"></i> Adresy dostawy</span>
+                <i class="fas fa-chevron-right" style="color: #999;"></i>
+            </a>
+            <a href="#" style="display: flex; justify-content: space-between; align-items: center; padding: 12px 0; text-decoration: none; color: #333; border-bottom: 1px solid #eee;">
+                <span><i class="fas fa-credit-card" style="margin-right: 12px; color: #666;"></i> Metody płatności</span>
+                <i class="fas fa-chevron-right" style="color: #999;"></i>
+            </a>
+            <a href="{{ url_for('logout') }}" style="display: flex; justify-content: space-between; align-items: center; padding: 12px 0; text-decoration: none; color: #dc3545;">
+                <span><i class="fas fa-sign-out-alt" style="margin-right: 12px;"></i> Wyloguj się</span>
+                <i class="fas fa-chevron-right"></i>
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

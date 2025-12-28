@@ -1,0 +1,115 @@
+{% extends "layout.html" %}
+
+{% block title %}Strona Główna{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<div class="hero-section text-center text-white">
+    <div class="container">
+        <h1 class="display-4 fw-bold mb-4">P@<strong>SIBRZUCH</strong></h1>
+        <p class="lead mb-4">Platforma rezerwacji najlepszych restauracji w Szczecinie</p>
+        <div class="row justify-content-center">
+            <div class="col-md-8">
+                <div class="input-group mb-3">
+                    <input type="text" class="form-control form-control-lg" placeholder="Szukaj restauracji...">
+                    <button class="btn btn-light btn-lg" type="button">
+                        <i class="bi bi-search"></i> Szukaj
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Restauracje -->
+<div class="container" id="restaurants">
+    <h2 class="text-center mb-5">Nasze Restauracje Partnerskie</h2>
+
+    <div class="row">
+        {% for restaurant in restaurants %}
+        <div class="col-md-6 col-lg-3 mb-4">
+            <div class="card restaurant-card h-100">
+                <div class="card-img-top bg-secondary" style="height: 150px; background: linear-gradient(135deg, #FF6B35, #FF8C42); display: flex; align-items: center; justify-content: center;">
+                    <i class="bi bi-shop display-4 text-white"></i>
+                </div>
+                <div class="card-body">
+                    <h5 class="card-title">{{ restaurant.name }}</h5>
+                    <p class="card-text text-muted small">{{ restaurant.description }}</p>
+                    <div class="mb-2">
+                        <span class="badge badge-orange">{{ restaurant.cuisine }}</span>
+                        {% if restaurant.delivery %}
+                        <span class="badge bg-success">Dostawa</span>
+                        {% endif %}
+                        {% if restaurant.reservation %}
+                        <span class="badge bg-info">Rezerwacja</span>
+                        {% endif %}
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <i class="bi bi-star-fill text-warning"></i>
+                            <span class="restaurant-rating">{{ restaurant.rating }}</span>
+                        </div>
+                        <a href="{{ url_for('restaurant_details', restaurant_id=restaurant.id) }}" class="btn btn-sm btn-outline-primary">
+                            Zobacz <i class="bi bi-arrow-right"></i>
+                        </a>
+                    </div>
+                </div>
+                <div class="card-footer bg-white">
+                    <small class="text-muted">
+                        <i class="bi bi-clock"></i> {{ restaurant.opening_hours }}
+                    </small>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- Jak to działa -->
+<div class="container mt-5">
+    <h2 class="text-center mb-5">Jak to działa?</h2>
+    <div class="row text-center">
+        <div class="col-md-3 mb-4">
+            <div class="p-4 border rounded-circle d-inline-block mb-3" style="border-color: var(--primary-orange) !important;">
+                <i class="bi bi-search display-6 text-primary"></i>
+            </div>
+            <h4>1. Znajdź</h4>
+            <p>Wybierz restaurację z naszej listy</p>
+        </div>
+        <div class="col-md-3 mb-4">
+            <div class="p-4 border rounded-circle d-inline-block mb-3" style="border-color: var(--primary-orange) !important;">
+                <i class="bi bi-calendar-check display-6 text-primary"></i>
+            </div>
+            <h4>2. Zarezerwuj</h4>
+            <p>Wybierz stolik i termin</p>
+        </div>
+        <div class="col-md-3 mb-4">
+            <div class="p-4 border rounded-circle d-inline-block mb-3" style="border-color: var(--primary-orange) !important;">
+                <i class="bi bi-bag display-6 text-primary"></i>
+            </div>
+            <h4>3. Zamów</h4>
+            <p>Wybierz dania z menu</p>
+        </div>
+        <div class="col-md-3 mb-4">
+            <div class="p-4 border rounded-circle d-inline-block mb-3" style="border-color: var(--primary-orange) !important;">
+                <i class="bi bi-emoji-smile display-6 text-primary"></i>
+            </div>
+            <h4>4. Ciesz się</h4>
+            <p>Smakuj wyśmienite dania</p>
+        </div>
+    </div>
+</div>
+
+<!-- CTA -->
+<div class="container mt-5 mb-5">
+    <div class="card bg-light border-0">
+        <div class="card-body text-center p-5">
+            <h2 class="mb-4">Dołącz do naszych partnerów</h2>
+            <p class="lead mb-4">Masz restaurację? Dołącz do platformy P@SIBRZUCH i zwiększ swoje zyski!</p>
+            <a href="#" class="btn btn-primary btn-lg">
+                <i class="bi bi-envelope"></i> Skontaktuj się z nami
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

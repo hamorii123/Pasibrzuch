@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+    <title>P@SIBRZUCH - Panel Kelnera • {% block title %}{% endblock %}</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/tablet.css') }}">
+    <style>
+        {% block extra_css %}{% endblock %}
+    </style>
+</head>
+<body class="tablet-view">
+    <!-- Sidebar dla tabletu -->
+    <aside class="tablet-sidebar">
+        <div class="sidebar-header">
+            <div class="restaurant-logo">
+                <i class="fas fa-utensils"></i>
+                <span>P@<strong>SIBRZUCH</strong></span>
+            </div>
+            <div class="user-info">
+                <div class="user-avatar">
+                    <i class="fas fa-user-tie"></i>
+                </div>
+                <div class="user-details">
+                    <div class="user-name">{{ session.user_name }}</div>
+                    <div class="user-role">Kelner</div>
+                    <div class="assigned-restaurant">
+                        <i class="fas fa-store"></i>
+                        {% if assigned_restaurant %}
+                            {{ assigned_restaurant.name }}
+                        {% else %}
+                            Brak przypisania
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <nav class="sidebar-nav">
+            {% if assigned_restaurant %}
+            <a href="{{ url_for('waiter_restaurant_view', restaurant_id=assigned_restaurant.id) }}"
+               class="nav-item {% if request.endpoint == 'waiter_restaurant_view' %}active{% endif %}">
+                <i class="fas fa-tachometer-alt"></i>
+                <span>Mój panel</span>
+            </a>
+
+            <a href="{{ url_for('waiter_floor_plan', restaurant_id=assigned_restaurant.id) }}"
+               class="nav-item {% if request.endpoint == 'waiter_floor_plan' %}active{% endif %}">
+                <i class="fas fa-edit"></i>
+                <span>Edytuj plan sali</span>
+            </a>
+
+            <a href="{{ url_for('waiter_restaurant_view', restaurant_id=assigned_restaurant.id) }}"
+               class="nav-item">
+                <i class="fas fa-chair"></i>
+                <span>Plan sali</span>
+            </a>
+
+            <a href="#" class="nav-item">
+                <i class="fas fa-calendar-alt"></i>
+                <span>Rezerwacje</span>
+            </a>
+
+            <a href="#" class="nav-item">
+                <i class="fas fa-clipboard-list"></i>
+                <span>Zamówienia</span>
+            </a>
+            {% endif %}
+
+            <a href="#" class="nav-item">
+                <i class="fas fa-bell"></i>
+                <span>Powiadomienia</span>
+                {% if assigned_restaurant %}
+                <span class="nav-badge">3</span>
+                {% endif %}
+            </a>
+
+            <a href="{{ url_for('logout') }}" class="nav-item logout">
+                <i class="fas fa-sign-out-alt"></i>
+                <span>Wyloguj</span>
+            </a>
+        </nav>
+
+        <div class="sidebar-footer">
+            <div class="system-status">
+                <div class="status-indicator online"></div>
+                <span>System online</span>
+            </div>
+            <div class="current-time">
+                <i class="far fa-clock"></i>
+                <span id="currentTime">{{ current_time }}</span>
+            </div>
+        </div>
+    </aside>
+
+    <!-- Główna zawartość -->
+    <main class="tablet-main">
+        {% if not assigned_restaurant %}
+        <div class="no-assignment">
+            <div class="no-assignment-content">
+                <i class="fas fa-exclamation-triangle fa-3x"></i>
+                <h2>Brak przypisanej restauracji</h2>
+                <p>Nie masz przypisanej restauracji. Skontaktuj się z menadżerem.</p>
+                <a href="{{ url_for('logout') }}" class="btn-logout">Wyloguj się</a>
+            </div>
+        </div>
+        {% else %}
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="tablet-toast toast-{{ category }}">
+                            <i class="fas fa-{% if category == 'success' %}check-circle{% else %}exclamation-circle{% endif %}"></i>
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+
+            {% block content %}{% endblock %}
+        {% endif %}
+    </main>
+
+    <script>
+        // Aktualizacja czasu w czasie rzeczywistym
+        function updateTime() {
+            const now = new Date();
+            const timeStr = now.toLocaleTimeString('pl-PL', {
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+            const dateStr = now.toLocaleDateString('pl-PL', {
+                weekday: 'long',
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+            });
+
+            const timeElement = document.getElementById('currentTime');
+            const dateElement = document.getElementById('currentDate');
+
+            if (timeElement) timeElement.textContent = timeStr;
+            if (dateElement) dateElement.textContent = dateStr;
+        }
+
+        setInterval(updateTime, 60000);
+        updateTime();
+
+        // Auto-hide toast
+        setTimeout(() => {
+            const toasts = document.querySelectorAll('.tablet-toast');
+            toasts.forEach(toast => {
+                toast.style.opacity = '0';
+                setTimeout(() => toast.remove(), 300);
+            });
+        }, 5000);
+
+        {% block extra_js %}{% endblock %}
+    </script>
+</body>
+</html>

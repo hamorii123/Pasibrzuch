@@ -1,0 +1,417 @@
+{% extends "mobile_layout.html" %}
+
+{% block title %}Rezerwacja{% endblock %}
+
+{% block extra_css %}
+.reservation-steps {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 24px;
+    padding: 0 16px;
+}
+
+.step {
+    text-align: center;
+    flex: 1;
+    position: relative;
+}
+
+.step-number {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: #ddd;
+    color: var(--gray);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 8px;
+    font-weight: 600;
+}
+
+.step.active .step-number {
+    background: var(--primary-orange);
+    color: white;
+}
+
+.step-line {
+    position: absolute;
+    top: 16px;
+    left: 50%;
+    right: -50%;
+    height: 2px;
+    background: #ddd;
+    z-index: -1;
+}
+
+.step:last-child .step-line {
+    display: none;
+}
+
+.datetime-picker {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+.time-slots {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+}
+
+.time-slot {
+    padding: 12px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    text-align: center;
+    background: white;
+}
+
+.time-slot.selected {
+    background: var(--primary-orange);
+    color: white;
+    border-color: var(--primary-orange);
+}
+
+.table-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+}
+
+.table-item {
+    padding: 16px;
+    border: 2px solid #ddd;
+    border-radius: 12px;
+    text-align: center;
+    background: white;
+}
+
+.table-item.selected {
+    border-color: var(--primary-orange);
+    background: rgba(255,107,53,0.1);
+}
+
+.table-item.unavailable {
+    opacity: 0.5;
+    background: #f8f9fa;
+}
+{% endblock %}
+
+{% block content %}
+<div class="mobile-container">
+    <!-- Steps Indicator -->
+    <div class="reservation-steps">
+        <div class="step active" id="step1">
+            <div class="step-number">1</div>
+            <div style="font-size: 12px;">Data/Godzina</div>
+        </div>
+        <div class="step" id="step2">
+            <div class="step-number">2</div>
+            <div style="font-size: 12px;">Stolik</div>
+        </div>
+        <div class="step" id="step3">
+            <div class="step-number">3</div>
+            <div style="font-size: 12px;">Potwierdzenie</div>
+        </div>
+    </div>
+
+    <!-- Step 1: Date & Time -->
+    <div id="step1Content" class="mobile-card">
+        <h3 style="margin-bottom: 16px;">Wybierz datę i godzinę</h3>
+
+        <div class="datetime-picker">
+            <div class="form-group">
+                <label class="form-label">Data</label>
+                <input type="date"
+                       class="form-control"
+                       id="reservationDate"
+                       min="{{ now().strftime('%Y-%m-%d') }}"
+                       value="{{ now().strftime('%Y-%m-%d') }}">
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Liczba osób</label>
+                <select class="form-control" id="peopleCount">
+                    <option value="1">1 osoba</option>
+                    <option value="2" selected>2 osoby</option>
+                    <option value="3">3 osoby</option>
+                    <option value="4">4 osoby</option>
+                    <option value="5">5 osób</option>
+                    <option value="6">6 osób</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">Godzina</label>
+            <div class="time-slots">
+                <button class="time-slot" onclick="selectTime('17:00')">17:00</button>
+                <button class="time-slot" onclick="selectTime('17:30')">17:30</button>
+                <button class="time-slot" onclick="selectTime('18:00')">18:00</button>
+                <button class="time-slot" onclick="selectTime('18:30')">18:30</button>
+                <button class="time-slot" onclick="selectTime('19:00')">19:00</button>
+                <button class="time-slot" onclick="selectTime('19:30')">19:30</button>
+                <button class="time-slot" onclick="selectTime('20:00')">20:00</button>
+                <button class="time-slot" onclick="selectTime('20:30')">20:30</button>
+                <button class="time-slot" onclick="selectTime('21:00')">21:00</button>
+            </div>
+        </div>
+
+        <button class="btn-mobile btn-primary" onclick="goToStep2()">
+            Dalej: Wybór stolika
+        </button>
+    </div>
+
+    <!-- Step 2: Table Selection -->
+    <div id="step2Content" class="mobile-card" style="display: none;">
+        <h3 style="margin-bottom: 16px;">Wybierz stolik</h3>
+        <p style="color: var(--gray); margin-bottom: 16px;">
+            Wybrano: <span id="selectedDateTime">...</span> dla <span id="selectedPeople">2</span> osób
+        </p>
+
+        <div class="table-grid" id="tablesGrid">
+            {% for table in tables %}
+            <div class="table-item"
+                 data-table-id="{{ table.id }}"
+                 data-seats="{{ table.seats }}"
+                 onclick="selectTable(this)">
+                <div style="font-size: 18px; font-weight: 700; margin-bottom: 8px;">
+                    Stolik {{ table.number }}
+                </div>
+                <div style="color: var(--gray);">
+                    <i class="fas fa-chair"></i> {{ table.seats }} miejsc
+                </div>
+                <div style="margin-top: 8px;">
+                    <span class="badge badge-success">Wolny</span>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <div style="display: flex; gap: 12px; margin-top: 16px;">
+            <button class="btn-mobile btn-secondary" onclick="backToStep1()">
+                Wróć
+            </button>
+            <button class="btn-mobile btn-primary" onclick="goToStep3()">
+                Dalej: Podsumowanie
+            </button>
+        </div>
+    </div>
+
+    <!-- Step 3: Confirmation -->
+    <div id="step3Content" class="mobile-card" style="display: none;">
+        <h3 style="margin-bottom: 16px;">Podsumowanie rezerwacji</h3>
+
+        <div style="background: #f8f9fa; padding: 16px; border-radius: 12px; margin-bottom: 16px;">
+            <div style="display: flex; justify-content: space-between; margin-bottom: 12px;">
+                <span style="color: var(--gray);">Restauracja:</span>
+                <strong>{{ restaurant.name }}</strong>
+            </div>
+            <div style="display: flex; justify-content: space-between; margin-bottom: 12px;">
+                <span style="color: var(--gray);">Data i godzina:</span>
+                <strong id="summaryDateTime"></strong>
+            </div>
+            <div style="display: flex; justify-content: space-between; margin-bottom: 12px;">
+                <span style="color: var(--gray);">Liczba osób:</span>
+                <strong id="summaryPeople"></strong>
+            </div>
+            <div style="display: flex; justify-content: space-between;">
+                <span style="color: var(--gray);">Stolik:</span>
+                <strong id="summaryTable"></strong>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">Dodatkowe uwagi (opcjonalnie)</label>
+            <textarea class="form-control"
+                      id="reservationNotes"
+                      rows="3"
+                      placeholder="Np. alergie, okazja, preferowane miejsce..."></textarea>
+        </div>
+
+        <div style="display: flex; gap: 12px; margin-top: 16px;">
+            <button class="btn-mobile btn-secondary" onclick="backToStep2()">
+                Wróć
+            </button>
+            <button class="btn-mobile btn-success" onclick="submitReservation()">
+                <i class="fas fa-check-circle"></i> Potwierdź rezerwację
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+let reservationData = {
+    date: '',
+    time: '',
+    people: 2,
+    tableId: null,
+    tableNumber: ''
+};
+
+function selectTime(time) {
+    // Remove selected class from all time slots
+    document.querySelectorAll('.time-slot').forEach(slot => {
+        slot.classList.remove('selected');
+    });
+
+    // Add selected class to clicked slot
+    event.target.classList.add('selected');
+    reservationData.time = time;
+}
+
+function goToStep2() {
+    // Validate step 1
+    reservationData.date = document.getElementById('reservationDate').value;
+    reservationData.people = parseInt(document.getElementById('peopleCount').value);
+
+    if (!reservationData.time) {
+        alert('Proszę wybrać godzinę');
+        return;
+    }
+
+    // Update UI
+    document.getElementById('step1').classList.remove('active');
+    document.getElementById('step2').classList.add('active');
+    document.getElementById('step1Content').style.display = 'none';
+    document.getElementById('step2Content').style.display = 'block';
+
+    // Update selected info
+    document.getElementById('selectedDateTime').textContent =
+        `${reservationData.date} ${reservationData.time}`;
+    document.getElementById('selectedPeople').textContent = reservationData.people;
+
+    // Filter tables by number of people
+    filterTables();
+}
+
+function filterTables() {
+    document.querySelectorAll('.table-item').forEach(table => {
+        const seats = parseInt(table.getAttribute('data-seats'));
+        if (seats >= reservationData.people) {
+            table.classList.remove('unavailable');
+        } else {
+            table.classList.add('unavailable');
+        }
+    });
+}
+
+function selectTable(tableElement) {
+    if (tableElement.classList.contains('unavailable')) return;
+
+    // Remove selected class from all tables
+    document.querySelectorAll('.table-item').forEach(table => {
+        table.classList.remove('selected');
+    });
+
+    // Add selected class to clicked table
+    tableElement.classList.add('selected');
+
+    reservationData.tableId = tableElement.getAttribute('data-table-id');
+    reservationData.tableNumber = tableElement.querySelector('div').textContent;
+}
+
+function goToStep3() {
+    if (!reservationData.tableId) {
+        alert('Proszę wybrać stolik');
+        return;
+    }
+
+    // Update UI
+    document.getElementById('step2').classList.remove('active');
+    document.getElementById('step3').classList.add('active');
+    document.getElementById('step2Content').style.display = 'none';
+    document.getElementById('step3Content').style.display = 'block';
+
+    // Update summary
+    document.getElementById('summaryDateTime').textContent =
+        `${reservationData.date} ${reservationData.time}`;
+    document.getElementById('summaryPeople').textContent = `${reservationData.people} osoby`;
+    document.getElementById('summaryTable').textContent = reservationData.tableNumber;
+}
+
+function backToStep1() {
+    document.getElementById('step2').classList.remove('active');
+    document.getElementById('step1').classList.add('active');
+    document.getElementById('step2Content').style.display = 'none';
+    document.getElementById('step1Content').style.display = 'block';
+}
+
+function backToStep2() {
+    document.getElementById('step3').classList.remove('active');
+    document.getElementById('step2').classList.add('active');
+    document.getElementById('step3Content').style.display = 'none';
+    document.getElementById('step2Content').style.display = 'block';
+}
+
+async function submitReservation() {
+    const notes = document.getElementById('reservationNotes').value;
+
+    try {
+        const response = await fetch('{{ url_for("client_reservation", restaurant_id=restaurant.id) }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                ...reservationData,
+                notes: notes
+            })
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+            // Show success modal
+            showSuccessModal(data.message);
+        } else {
+            alert('Błąd: ' + data.message);
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        alert('Wystąpił błąd podczas rezerwacji');
+    }
+}
+
+function showSuccessModal(message) {
+    const modalHTML = `
+        <div class="modal-overlay active" onclick="closeModal()">
+            <div class="modal-content" onclick="event.stopPropagation()">
+                <div style="text-align: center; padding: 24px;">
+                    <div style="width: 80px; height: 80px; background: #d4edda; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px;">
+                        <i class="fas fa-check" style="font-size: 36px; color: #28a745;"></i>
+                    </div>
+                    <h3 style="margin-bottom: 8px;">Sukces!</h3>
+                    <p style="color: var(--gray); margin-bottom: 24px;">${message}</p>
+                    <div style="display: flex; gap: 12px;">
+                        <button class="btn-mobile btn-secondary" onclick="closeModal()">
+                            OK
+                        </button>
+                        <a href="{{ url_for('client_dashboard') }}" class="btn-mobile btn-primary">
+                            Przejdź do panelu
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+
+    document.body.insertAdjacentHTML('beforeend', modalHTML);
+}
+
+function closeModal() {
+    document.querySelector('.modal-overlay')?.remove();
+}
+
+// Initialize
+document.addEventListener('DOMContentLoaded', function() {
+    // Set today's date
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById('reservationDate').value = today;
+    reservationData.date = today;
+});
+</script>
+{% endblock %}

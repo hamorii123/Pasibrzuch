@@ -1,0 +1,183 @@
+{% extends "mobile_layout.html" %}
+
+{% block title %}Restauracje{% endblock %}
+
+{% block extra_css %}
+.search-container {
+    position: sticky;
+    top: 60px;
+    background: var(--light-gray);
+    padding: 16px;
+    z-index: 10;
+}
+
+.filters {
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    padding: 8px 0;
+    margin-bottom: 16px;
+}
+
+.filter-btn {
+    padding: 8px 16px;
+    border: 1px solid #ddd;
+    border-radius: 20px;
+    background: var(--white);
+    white-space: nowrap;
+    font-size: 14px;
+}
+
+.filter-btn.active {
+    background: var(--primary-orange);
+    color: var(--white);
+    border-color: var(--primary-orange);
+}
+
+.restaurant-card {
+    display: block;
+    text-decoration: none;
+    color: inherit;
+    margin-bottom: 16px;
+}
+
+.restaurant-image {
+    width: 100%;
+    height: 180px;
+    background: linear-gradient(135deg, #FF6B35, #FF8C42);
+    border-radius: 12px;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 48px;
+}
+
+.restaurant-badge {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    background: var(--white);
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+{% endblock %}
+
+{% block content %}
+<div class="mobile-container">
+    <!-- Search Bar -->
+    <div class="search-container">
+        <div class="form-group" style="margin-bottom: 0;">
+            <input type="text"
+                   class="form-control"
+                   placeholder="🔍 Szukaj restauracji..."
+                   oninput="searchRestaurants(this.value)">
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="filters">
+        <button class="filter-btn active" onclick="filterByCuisine('all')">Wszystkie</button>
+        <button class="filter-btn" onclick="filterByCuisine('polska')">Polska</button>
+        <button class="filter-btn" onclick="filterByCuisine('włoska')">Włoska</button>
+        <button class="filter-btn" onclick="filterByCuisine('japońska')">Japońska</button>
+        <button class="filter-btn" onclick="filterByCuisine('szybkie')">Szybkie</button>
+        <button class="filter-btn" onclick="filterByCuisine('wege')">Wege</button>
+    </div>
+
+    <!-- Restaurants List -->
+    <div id="restaurantsList">
+        {% for restaurant in restaurants %}
+        <a href="{{ url_for('client_menu', restaurant_id=restaurant.id) }}"
+           class="restaurant-card" data-cuisine="{{ restaurant.cuisine|lower }}">
+            <div style="position: relative;">
+                <div class="restaurant-image">
+                    <i class="fas fa-utensils"></i>
+                </div>
+                {% if restaurant.delivery %}
+                <div class="restaurant-badge" style="background: #28a745; color: white;">
+                    <i class="fas fa-motorcycle"></i> Dostawa
+                </div>
+                {% endif %}
+            </div>
+
+            <div style="padding: 0 4px;">
+                <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 8px;">
+                    <h3 style="margin: 0; font-size: 18px;">{{ restaurant.name }}</h3>
+                    <div style="color: #FF6B35; font-weight: 700;">
+                        <i class="fas fa-star"></i> {{ restaurant.rating }}
+                    </div>
+                </div>
+
+                <div style="color: var(--gray); font-size: 14px; margin-bottom: 8px;">
+                    <i class="fas fa-utensil-spoon"></i> {{ restaurant.cuisine }}
+                </div>
+
+                <div style="color: var(--gray); font-size: 14px; margin-bottom: 12px;">
+                    <i class="fas fa-clock"></i> {{ restaurant.opening_hours }}
+                </div>
+
+                <div style="display: flex; gap: 8px;">
+                    {% if restaurant.reservation %}
+                    <span style="background: rgba(0,123,255,0.1); color: #007bff; padding: 4px 12px; border-radius: 12px; font-size: 12px;">
+                        Rezerwacja
+                    </span>
+                    {% endif %}
+
+                    {% if restaurant.delivery %}
+                    <span style="background: rgba(40,167,69,0.1); color: #28a745; padding: 4px 12px; border-radius: 12px; font-size: 12px;">
+                        {{ restaurant.delivery_time }}
+                    </span>
+                    {% endif %}
+                </div>
+            </div>
+        </a>
+        {% endfor %}
+    </div>
+</div>
+
+<script>
+let allRestaurants = document.querySelectorAll('.restaurant-card');
+let activeFilter = 'all';
+
+function searchRestaurants(query) {
+    query = query.toLowerCase();
+    allRestaurants.forEach(card => {
+        const name = card.querySelector('h3').textContent.toLowerCase();
+        const cuisine = card.getAttribute('data-cuisine');
+        const matchesSearch = name.includes(query) || cuisine.includes(query);
+        const matchesFilter = activeFilter === 'all' || cuisine.includes(activeFilter);
+
+        if (matchesSearch && matchesFilter) {
+            card.style.display = 'block';
+        } else {
+            card.style.display = 'none';
+        }
+    });
+}
+
+function filterByCuisine(cuisine) {
+    activeFilter = cuisine;
+
+    // Update active filter button
+    document.querySelectorAll('.filter-btn').forEach(btn => {
+        btn.classList.remove('active');
+    });
+    event.target.classList.add('active');
+
+    // Filter restaurants
+    allRestaurants.forEach(card => {
+        const cardCuisine = card.getAttribute('data-cuisine');
+        if (cuisine === 'all' || cardCuisine.includes(cuisine)) {
+            card.style.display = 'block';
+        } else {
+            card.style.display = 'none';
+        }
+    });
+}
+</script>
+{% endblock %}

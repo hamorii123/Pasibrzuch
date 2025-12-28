@@ -1,0 +1,170 @@
+{% extends "mobile_layout.html" %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block extra_css %}
+<style>
+/* Dodatkowe style tylko dla dashboard */
+.dashboard-stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin-bottom: 20px;
+}
+
+.stat-card {
+    background: var(--card);
+    border-radius: 12px;
+    padding: 16px;
+    text-align: center;
+    box-shadow: var(--shadow);
+}
+
+.stat-number {
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--primary);
+    margin-bottom: 4px;
+}
+
+.stat-label {
+    font-size: 12px;
+    color: var(--text-light);
+}
+
+.dashboard-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin: 20px 0;
+}
+
+.user-welcome {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 20px;
+}
+
+.user-avatar {
+    width: 60px;
+    height: 60px;
+    background: var(--primary-light);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--primary);
+    font-size: 24px;
+}
+
+/* Restaurant grid dla dashboard */
+.restaurant-grid-dashboard {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Welcome Card -->
+<div class="card">
+    <div class="user-welcome">
+        <div class="user-avatar">
+            <i class="fas fa-user"></i>
+        </div>
+        <div>
+            <h2 style="margin-bottom: 4px;">Witaj, {{ session.user_name }}! 👋</h2>
+            <p style="color: var(--text-light);">Co chcesz dzisiaj zrobić?</p>
+        </div>
+    </div>
+
+    <div class="dashboard-actions">
+        <a href="{{ url_for('client_restaurants') }}" class="btn btn-primary">
+            <i class="fas fa-store"></i>
+            Restauracje
+        </a>
+        <a href="#" class="btn btn-outline">
+            <i class="fas fa-search"></i>
+            Szukaj
+        </a>
+    </div>
+</div>
+
+<!-- Stats -->
+<div class="dashboard-stats">
+    <div class="stat-card">
+        <div class="stat-number">{{ reservations|default([])|length }}</div>
+        <div class="stat-label">Rezerwacje</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-number">{{ orders|default([])|length }}</div>
+        <div class="stat-label">Zamówienia</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-number">{{ restaurants|default([])|length }}</div>
+        <div class="stat-label">Restauracje</div>
+    </div>
+</div>
+
+<!-- Active Reservations -->
+<div class="card">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+        <h3 style="margin: 0;">Nadchodzące rezerwacje</h3>
+        <a href="#" style="color: var(--primary); text-decoration: none; font-size: 14px;">Wszystkie</a>
+    </div>
+
+    {% if reservations and reservations|length > 0 %}
+    <div class="list">
+        {% for res in reservations[:3] %}
+        <div class="list-item">
+            <div class="list-item-icon">
+                <i class="fas fa-calendar-check"></i>
+            </div>
+            <div class="list-item-content">
+                <div class="list-item-title">{{ res.restaurant_name }}</div>
+                <div class="list-item-subtitle">
+                    {{ res.date }} o {{ res.time }} • {{ res.people }} osoby
+                </div>
+                <div style="margin-top: 4px;">
+                    <span class="badge badge-success">{{ res.status }}</span>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty-state">
+        <div class="empty-state-icon">
+            <i class="fas fa-calendar-times"></i>
+        </div>
+        <h4 class="empty-state-title">Brak rezerwacji</h4>
+        <p class="empty-state-text">Zarezerwuj swój pierwszy stolik</p>
+        <a href="{{ url_for('client_restaurants') }}" class="btn btn-primary" style="margin-top: 16px;">
+            Zarezerwuj stolik
+        </a>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Recommended Restaurants -->
+<div class="card">
+    <h3 style="margin-bottom: 16px;">Polecane restauracje</h3>
+
+    <div class="restaurant-grid-dashboard">
+        {% for restaurant in restaurants[:4] %}
+        <a href="{{ url_for('client_menu', restaurant_id=restaurant.id) }}" class="restaurant-card">
+            <div class="restaurant-image">
+                <i class="fas fa-utensils"></i>
+                <div class="restaurant-badge">
+                    <i class="fas fa-star"></i> {{ restaurant.rating }}
+                </div>
+            </div>
+            <div class="restaurant-name">{{ restaurant.name }}</div>
+            <div class="restaurant-info">{{ restaurant.cuisine }}</div>
+        </a>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

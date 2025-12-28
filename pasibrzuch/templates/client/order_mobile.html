@@ -1,0 +1,450 @@
+{% extends "mobile_layout.html" %}
+
+{% block title %}Zamówienie{% endblock %}
+
+{% block extra_css %}
+.cart-item {
+    display: flex;
+    align-items: center;
+    padding: 12px 0;
+    border-bottom: 1px solid #eee;
+}
+
+.cart-item-image {
+    width: 60px;
+    height: 60px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 12px;
+    color: var(--gray);
+}
+
+.cart-item-info {
+    flex: 1;
+}
+
+.cart-item-name {
+    font-weight: 600;
+    margin-bottom: 4px;
+}
+
+.cart-item-price {
+    color: var(--primary-orange);
+    font-weight: 600;
+}
+
+.quantity-control {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.quantity-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    border: 1px solid #ddd;
+    background: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.quantity-value {
+    min-width: 30px;
+    text-align: center;
+    font-weight: 600;
+}
+
+.order-summary {
+    background: #f8f9fa;
+    border-radius: 12px;
+    padding: 16px;
+    margin-top: 16px;
+}
+
+.summary-row {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 8px;
+}
+
+.summary-total {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 2px solid #ddd;
+    font-size: 18px;
+    font-weight: 700;
+}
+
+.delivery-options {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+.delivery-option {
+    padding: 16px;
+    border: 2px solid #ddd;
+    border-radius: 12px;
+    text-align: center;
+    background: white;
+}
+
+.delivery-option.selected {
+    border-color: var(--primary-orange);
+    background: rgba(255,107,53,0.1);
+}
+{% endblock %}
+
+{% block content %}
+<div class="mobile-container">
+    <!-- Cart Items -->
+    <div class="mobile-card">
+        <h3 style="margin-bottom: 16px;">Twój koszyk</h3>
+
+        <div id="cartItems">
+            <div class="empty-state">
+                <div class="empty-state-icon">
+                    <i class="fas fa-shopping-cart"></i>
+                </div>
+                <p style="color: var(--gray);">Twój koszyk jest pusty</p>
+                <a href="{{ url_for('client_menu', restaurant_id=restaurant.id) }}"
+                   class="btn-mobile btn-primary" style="margin-top: 16px;">
+                    Dodaj dania z menu
+                </a>
+            </div>
+        </div>
+
+        <div id="cartWithItems" style="display: none;">
+            <div id="cartItemsList">
+                <!-- Cart items will be added here by JavaScript -->
+            </div>
+
+            <div class="order-summary">
+                <div class="summary-row">
+                    <span>Suma częściowa:</span>
+                    <span id="subtotal">0.00 zł</span>
+                </div>
+                <div class="summary-row">
+                    <span>Dostawa:</span>
+                    <span id="deliveryCost">10.00 zł</span>
+                </div>
+                <div class="summary-total">
+                    <span>Razem do zapłaty:</span>
+                    <span id="totalAmount">0.00 zł</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delivery Options -->
+    <div class="mobile-card" id="deliverySection" style="display: none;">
+        <h3 style="margin-bottom: 16px;">Sposób odbioru</h3>
+
+        <div class="delivery-options">
+            <div class="delivery-option" onclick="selectDeliveryType('pickup')">
+                <div style="font-size: 24px; margin-bottom: 8px;">
+                    <i class="fas fa-store"></i>
+                </div>
+                <div style="font-weight: 600; margin-bottom: 4px;">Odbiór osobisty</div>
+                <div style="font-size: 14px; color: var(--gray);">Odbiór w restauracji</div>
+            </div>
+
+            <div class="delivery-option" onclick="selectDeliveryType('delivery')">
+                <div style="font-size: 24px; margin-bottom: 8px;">
+                    <i class="fas fa-motorcycle"></i>
+                </div>
+                <div style="font-weight: 600; margin-bottom: 4px;">Dostawa</div>
+                <div style="font-size: 14px; color: var(--gray);">Dostawa pod adres +10 zł</div>
+            </div>
+        </div>
+
+        <div id="addressField" style="display: none;">
+            <div class="form-group">
+                <label class="form-label">Adres dostawy</label>
+                <textarea class="form-control"
+                          id="deliveryAddress"
+                          rows="3"
+                          placeholder="Ulica, numer, kod pocztowy, miasto..."></textarea>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delivery Time -->
+    <div class="mobile-card" id="timeSection" style="display: none;">
+        <h3 style="margin-bottom: 16px;">Czas dostawy/odbioru</h3>
+
+        <div class="form-group">
+            <select class="form-control" id="deliveryTime">
+                <option value="">Wybierz czas</option>
+                <option value="asap">Jak najszybciej (~30 min)</option>
+                <option value="30min">Za 30 minut</option>
+                <option value="60min">Za 1 godzinę</option>
+                <option value="90min">Za 1,5 godziny</option>
+                <option value="120min">Za 2 godziny</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">Dodatkowe uwagi (opcjonalnie)</label>
+            <textarea class="form-control"
+                      id="orderNotes"
+                      rows="2"
+                      placeholder="Np. alergie, preferencje..."></textarea>
+        </div>
+    </div>
+
+    <!-- Payment -->
+    <div class="mobile-card" id="paymentSection" style="display: none;">
+        <h3 style="margin-bottom: 16px;">Płatność</h3>
+
+        <div class="form-group">
+            <div style="display: flex; align-items: center; padding: 12px; border: 1px solid #ddd; border-radius: 8px; margin-bottom: 8px;">
+                <input type="radio"
+                       name="payment"
+                       id="cash"
+                       checked
+                       style="margin-right: 12px;">
+                <label for="cash" style="flex: 1;">
+                    <div style="font-weight: 600;">Gotówka przy odbiorze</div>
+                    <div style="font-size: 14px; color: var(--gray);">Zapłać kurierowi lub w restauracji</div>
+                </label>
+            </div>
+
+            <div style="display: flex; align-items: center; padding: 12px; border: 1px solid #ddd; border-radius: 8px;">
+                <input type="radio"
+                       name="payment"
+                       id="card"
+                       style="margin-right: 12px;">
+                <label for="card" style="flex: 1;">
+                    <div style="font-weight: 600;">Karta online</div>
+                    <div style="font-size: 14px; color: var(--gray);">Zapłać teraz kartą</div>
+                </label>
+            </div>
+        </div>
+
+        <button class="btn-mobile btn-success" onclick="submitOrder()">
+            <i class="fas fa-check-circle"></i> Złóż zamówienie
+        </button>
+    </div>
+</div>
+
+<script>
+let cart = JSON.parse(localStorage.getItem('cart_' + {{ restaurant.id }}) || '[]');
+let orderData = {
+    deliveryType: '',
+    deliveryTime: '',
+    deliveryAddress: '',
+    notes: '',
+    payment: 'cash'
+};
+
+function loadCart() {
+    const emptyCart = document.getElementById('cartItems');
+    const cartWithItems = document.getElementById('cartWithItems');
+    const deliverySection = document.getElementById('deliverySection');
+    const timeSection = document.getElementById('timeSection');
+    const paymentSection = document.getElementById('paymentSection');
+
+    if (cart.length === 0) {
+        emptyCart.style.display = 'block';
+        cartWithItems.style.display = 'none';
+        deliverySection.style.display = 'none';
+        timeSection.style.display = 'none';
+        paymentSection.style.display = 'none';
+        return;
+    }
+
+    emptyCart.style.display = 'none';
+    cartWithItems.style.display = 'block';
+    deliverySection.style.display = 'block';
+
+    // Render cart items
+    const cartItemsList = document.getElementById('cartItemsList');
+    let html = '';
+    let subtotal = 0;
+
+    cart.forEach((item, index) => {
+        const itemTotal = item.price * item.quantity;
+        subtotal += itemTotal;
+
+        html += `
+            <div class="cart-item">
+                <div class="cart-item-image">
+                    <i class="fas fa-utensils"></i>
+                </div>
+                <div class="cart-item-info">
+                    <div class="cart-item-name">${item.name}</div>
+                    <div class="cart-item-price">${item.price.toFixed(2)} zł</div>
+                </div>
+                <div class="quantity-control">
+                    <button class="quantity-btn" onclick="updateQuantity(${index}, -1)">
+                        <i class="fas fa-minus"></i>
+                    </button>
+                    <div class="quantity-value">${item.quantity}</div>
+                    <button class="quantity-btn" onclick="updateQuantity(${index}, 1)">
+                        <i class="fas fa-plus"></i>
+                    </button>
+                    <button class="quantity-btn" onclick="removeItem(${index})" style="margin-left: 8px; color: #dc3545;">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            </div>
+        `;
+    });
+
+    cartItemsList.innerHTML = html;
+
+    // Update totals
+    const deliveryCost = orderData.deliveryType === 'delivery' ? 10.00 : 0.00;
+    const total = subtotal + deliveryCost;
+
+    document.getElementById('subtotal').textContent = subtotal.toFixed(2) + ' zł';
+    document.getElementById('deliveryCost').textContent = deliveryCost.toFixed(2) + ' zł';
+    document.getElementById('totalAmount').textContent = total.toFixed(2) + ' zł';
+}
+
+function updateQuantity(index, change) {
+    cart[index].quantity += change;
+
+    if (cart[index].quantity < 1) {
+        cart[index].quantity = 1;
+    }
+
+    localStorage.setItem('cart_' + {{ restaurant.id }}, JSON.stringify(cart));
+    loadCart();
+}
+
+function removeItem(index) {
+    cart.splice(index, 1);
+    localStorage.setItem('cart_' + {{ restaurant.id }}, JSON.stringify(cart));
+    loadCart();
+}
+
+function selectDeliveryType(type) {
+    orderData.deliveryType = type;
+
+    // Update UI
+    document.querySelectorAll('.delivery-option').forEach(option => {
+        option.classList.remove('selected');
+    });
+    event.target.closest('.delivery-option').classList.add('selected');
+
+    // Show/hide address field
+    const addressField = document.getElementById('addressField');
+    if (type === 'delivery') {
+        addressField.style.display = 'block';
+    } else {
+        addressField.style.display = 'none';
+    }
+
+    // Show time section
+    document.getElementById('timeSection').style.display = 'block';
+    document.getElementById('paymentSection').style.display = 'block';
+
+    // Reload cart to update delivery cost
+    loadCart();
+}
+
+async function submitOrder() {
+    // Validate
+    if (!orderData.deliveryType) {
+        alert('Proszę wybrać sposób odbioru');
+        return;
+    }
+
+    if (orderData.deliveryType === 'delivery' && !document.getElementById('deliveryAddress').value.trim()) {
+        alert('Proszę podać adres dostawy');
+        return;
+    }
+
+    const deliveryTime = document.getElementById('deliveryTime').value;
+    if (!deliveryTime) {
+        alert('Proszę wybrać czas dostawy/odbioru');
+        return;
+    }
+
+    const subtotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+    if (subtotal < 30) {
+        alert('Minimalna wartość zamówienia to 30 zł');
+        return;
+    }
+
+    try {
+        const response = await fetch('{{ url_for("client_order", restaurant_id=restaurant.id) }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                restaurant_id: {{ restaurant.id }},
+                items: cart,
+                delivery_type: orderData.deliveryType,
+                delivery_time: deliveryTime,
+                delivery_address: document.getElementById('deliveryAddress').value,
+                notes: document.getElementById('orderNotes').value,
+                total: subtotal + (orderData.deliveryType === 'delivery' ? 10.00 : 0.00)
+            })
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+            // Clear cart
+            localStorage.removeItem('cart_' + {{ restaurant.id }});
+            showOrderSuccess(data.message);
+        } else {
+            alert('Błąd: ' + data.message);
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        alert('Wystąpił błąd podczas składania zamówienia');
+    }
+}
+
+function showOrderSuccess(message) {
+    const modalHTML = `
+        <div class="modal-overlay active" onclick="closeOrderModal()">
+            <div class="modal-content" onclick="event.stopPropagation()">
+                <div style="text-align: center; padding: 24px;">
+                    <div style="width: 80px; height: 80px; background: #d4edda; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px;">
+                        <i class="fas fa-check" style="font-size: 36px; color: #28a745;"></i>
+                    </div>
+                    <h3 style="margin-bottom: 8px;">Zamówienie przyjęte!</h3>
+                    <p style="color: var(--gray); margin-bottom: 16px;">${message}</p>
+                    <div style="background: #e7f3ff; padding: 12px; border-radius: 8px; margin-bottom: 24px;">
+                        <div style="font-weight: 600; margin-bottom: 4px;">Szacowany czas:</div>
+                        <div>30-45 minut</div>
+                    </div>
+                    <div style="display: flex; gap: 12px;">
+                        <button class="btn-mobile btn-secondary" onclick="closeOrderModal()">
+                            OK
+                        </button>
+                        <a href="{{ url_for('client_dashboard') }}" class="btn-mobile btn-primary">
+                            Przejdź do panelu
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+
+    document.body.insertAdjacentHTML('beforeend', modalHTML);
+}
+
+function closeOrderModal() {
+    document.querySelector('.modal-overlay')?.remove();
+    window.location.href = "{{ url_for('client_dashboard') }}";
+}
+
+// Initialize
+document.addEventListener('DOMContentLoaded', loadCart);
+</script>
+{% endblock %}

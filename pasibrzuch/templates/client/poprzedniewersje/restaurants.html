@@ -1,0 +1,122 @@
+{% extends "client/layout.html" %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-12">
+            <h1 class="h3">Restauracje</h1>
+            <p class="text-muted">Wybierz restaurację, aby zobaczyć menu, zarezerwować stolik lub zamówić jedzenie</p>
+        </div>
+    </div>
+
+    <!-- Filtr i wyszukiwanie -->
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <div class="input-group">
+                <input type="text" class="form-control" placeholder="Szukaj restauracji..." id="searchInput">
+                <button class="btn btn-primary" onclick="searchRestaurants()">
+                    <i class="bi bi-search"></i> Szukaj
+                </button>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <select class="form-select" id="categoryFilter">
+                <option value="all">Wszystkie kuchnie</option>
+                <option value="polska">Polska</option>
+                <option value="włoska">Włoska</option>
+                <option value="japońska">Japońska</option>
+                <option value="amerykańska">Amerykańska</option>
+            </select>
+        </div>
+    </div>
+
+    <!-- Lista restauracji -->
+    <div class="row" id="restaurantsList">
+        {% for restaurant in restaurants %}
+        <div class="col-lg-4 col-md-6 mb-4">
+            <div class="card restaurant-card h-100">
+                <div class="card-img-top bg-secondary"
+                     style="height: 200px; background: linear-gradient(135deg, #FF6B35, #FF8C42);
+                            display: flex; align-items: center; justify-content: center;">
+                    <i class="bi bi-shop display-1 text-white"></i>
+                </div>
+                <div class="card-body">
+                    <h5 class="card-title">{{ restaurant.name }}</h5>
+                    <p class="card-text text-muted">{{ restaurant.description }}</p>
+
+                    <div class="mb-3">
+                        <div class="d-flex align-items-center mb-2">
+                            <i class="bi bi-geo-alt text-muted me-2"></i>
+                            <small>{{ restaurant.address }}</small>
+                        </div>
+                        <div class="d-flex align-items-center mb-2">
+                            <i class="bi bi-clock text-muted me-2"></i>
+                            <small>{{ restaurant.opening_hours }}</small>
+                        </div>
+                        <div class="d-flex align-items-center">
+                            <i class="bi bi-star-fill text-warning me-2"></i>
+                            <small class="fw-bold">{{ restaurant.rating }}</small>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <span class="badge bg-light text-dark border me-1">{{ restaurant.cuisine }}</span>
+                        {% if restaurant.delivery %}
+                        <span class="badge bg-success me-1">Dostawa</span>
+                        {% endif %}
+                        {% if restaurant.reservation %}
+                        <span class="badge bg-info">Rezerwacja</span>
+                        {% endif %}
+                    </div>
+
+                    <div class="d-grid gap-2">
+                        <a href="{{ url_for('client_menu', restaurant_id=restaurant.id) }}"
+                           class="btn btn-outline-primary">
+                            <i class="bi bi-menu-button-wide"></i> Zobacz menu
+                        </a>
+                        {% if restaurant.reservation %}
+                        <a href="{{ url_for('client_reservation', restaurant_id=restaurant.id) }}"
+                           class="btn btn-primary">
+                            <i class="bi bi-calendar-check"></i> Zarezerwuj stolik
+                        </a>
+                        {% endif %}
+                        {% if restaurant.delivery %}
+                        <a href="{{ url_for('client_order', restaurant_id=restaurant.id) }}"
+                           class="btn btn-success">
+                            <i class="bi bi-bag"></i> Zamów na wynos
+                        </a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<script>
+function searchRestaurants() {
+    const searchText = document.getElementById('searchInput').value.toLowerCase();
+    const category = document.getElementById('categoryFilter').value;
+
+    const restaurants = document.querySelectorAll('.restaurant-card');
+
+    restaurants.forEach(card => {
+        const title = card.querySelector('.card-title').textContent.toLowerCase();
+        const cuisine = card.querySelector('.badge.bg-light').textContent.toLowerCase();
+
+        const matchesSearch = title.includes(searchText) || searchText === '';
+        const matchesCategory = category === 'all' || cuisine.includes(category);
+
+        if (matchesSearch && matchesCategory) {
+            card.parentElement.style.display = 'block';
+        } else {
+            card.parentElement.style.display = 'none';
+        }
+    });
+}
+
+document.getElementById('categoryFilter').addEventListener('change', searchRestaurants);
+document.getElementById('searchInput').addEventListener('keyup', searchRestaurants);
+</script>
+{% endblock %}
