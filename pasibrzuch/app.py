@@ -2,7 +2,6 @@ from flask import Flask, render_template, request, redirect, url_for, session, j
 from functools import wraps
 from datetime import datetime
 import json
-from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from models import db, User, Restaurant
 
@@ -139,9 +138,9 @@ sample_cart = [
 # Helper functions
 def get_assigned_restaurant(user_id):
     """Pobierz restaurację przypisaną do kelnera"""
-    user = next((u for u in users if u['id'] == user_id), None)
-    if user and user.get('role') == 'waiter':
-        return next((r for r in restaurants if r['id'] == user.get('restaurant_id')), None)
+    user = User.query.get(user_id)
+    if user and user.role == 'waiter':
+        return Restaurant.query.get(user.restaurant_id)
     return None
 
 
@@ -168,13 +167,13 @@ def login():
     """Strona logowania"""
     # Jeśli użytkownik jest już zalogowany, przekieruj do odpowiedniego dashboard
     if 'user_id' in session:
-        user = next((u for u in users if u['id'] == session['user_id']), None)
+        user = User.query.get(session['user_id'])
         if user:
-            if user['role'] == 'client':
+            if user.role == 'client':
                 return redirect(url_for('client_dashboard'))
-            elif user['role'] == 'waiter':
+            elif user.role == 'waiter':
                 return redirect(url_for('waiter_dashboard'))
-            elif user['role'] == 'manager':
+            elif user.role == 'manager':
                 return redirect(url_for('manager_dashboard'))
         return redirect(url_for('login'))
 
@@ -183,23 +182,23 @@ def login():
         password = request.form.get('password')
 
         # Szukaj użytkownika
-        user = next((u for u in users if u['email'] == email and u['password'] == password), None)
+        user = User.query.filter_by(email=email, password=password).first()
 
         if user:
             # Zaloguj użytkownika
-            session['user_id'] = user['id']
-            session['user_name'] = user['name']
-            session['role'] = user['role']
+            session['user_id'] = user.id
+            session['user_name'] = user.name
+            session['role'] = user.role
             session.permanent = True
 
-            flash(f'Zalogowano pomyślnie! Witaj {user["name"]}', 'success')
+            flash(f'Zalogowano pomyślnie! Witaj {user.name}', 'success')
 
             # Przekieruj do odpowiedniego panelu
-            if user['role'] == 'client':
+            if user.role == 'client':
                 return redirect(url_for('client_dashboard'))
-            elif user['role'] == 'waiter':
+            elif user.role == 'waiter':
                 return redirect(url_for('waiter_dashboard'))
-            elif user['role'] == 'manager':
+            elif user.role == 'manager':
                 return redirect(url_for('manager_dashboard'))
         else:
             flash('Nieprawidłowy email lub hasło', 'danger')
@@ -234,13 +233,15 @@ def client_dashboard():
     if session.get('role') != 'client':
         flash('Brak dostępu', 'danger')
         return redirect(url_for('login'))
+    restaurants = Restaurant.query.all()
 
-    return render_template('client/dashboard_mobile.html',
-                           user_name=session['user_name'],
-                           restaurants=restaurants,
-                           reservations=[],
-                           orders=[])
-
+    return render_template(
+        'client/dashboard_mobile.html',
+        user_name=session['user_name'],
+        restaurants=restaurants,
+        reservations=[],
+        orders=[]
+    )
 
 @app.route('/client/restaurants')
 @login_required
@@ -250,6 +251,7 @@ def client_restaurants():
         flash('Brak dostępu', 'danger')
         return redirect(url_for('login'))
 
+    restaurants = Restaurant.query.all()
     return render_template('client/restaurants_mobile.html', restaurants=restaurants)
 
 
@@ -261,7 +263,7 @@ def client_menu(restaurant_id):
         flash('Brak dostępu', 'danger')
         return redirect(url_for('login'))
 
-    restaurant = next((r for r in restaurants if r['id'] == restaurant_id), None)
+    restaurant = Restaurant.query.get(restaurant_id)
     if not restaurant:
         flash('Restauracja nie znaleziona', 'danger')
         return redirect(url_for('client_restaurants'))
@@ -302,13 +304,13 @@ def client_search():
     # Filtruj restauracje
     filtered_restaurants = []
     if query:
-        query_lower = query.lower()
-        filtered_restaurants = [
-            r for r in restaurants
-            if query_lower in r['name'].lower() or query_lower in r['cuisine'].lower()
-        ]
+        query=query.lower()
+        filtered_restaurants = Restaurant.query.filter(
+            (Restaurant.name.ilike(f'%{query}%')) |
+            (Restaurant.cuisine.ilike(f'%{query}%'))
+        ).all()
     else:
-        filtered_restaurants = restaurants
+        filtered_restaurants = Restaurant.query.all()
 
     return render_template('client/search_mobile.html',
                            query=query,
@@ -342,7 +344,7 @@ def client_profile():
         return redirect(url_for('login'))
 
     # Znajdź użytkownika
-    user = next((u for u in users if u['id'] == session['user_id']), None)
+    user = User.query.get(session['user_id'])
 
     # Dane testowe
     reservations = [
@@ -371,7 +373,8 @@ def client_reservation(restaurant_id):
         flash('Brak dostępu', 'danger')
         return redirect(url_for('login'))
 
-    restaurant = next((r for r in restaurants if r['id'] == restaurant_id), None)
+    restaurant = Restaurant.query.get(restaurant_id)
+
     if not restaurant:
         flash('Restauracja nie znaleziona', 'danger')
         return redirect(url_for('client_restaurants'))
@@ -411,7 +414,7 @@ def client_order(restaurant_id):
         flash('Brak dostępu', 'danger')
         return redirect(url_for('login'))
 
-    restaurant = next((r for r in restaurants if r['id'] == restaurant_id), None)
+    restaurant = Restaurant.query.get(restaurant_id)
     if not restaurant:
         flash('Restauracja nie znaleziona', 'danger')
         return redirect(url_for('client_restaurants'))
@@ -474,7 +477,7 @@ def waiter_dashboard():
         return redirect(url_for('login'))
 
     # Przekieruj od razu do widoku restauracji
-    return redirect(url_for('waiter_restaurant_view', restaurant_id=assigned_restaurant['id']))
+    return redirect(url_for('waiter_restaurant_view', restaurant_id=assigned_restaurant.id))
 
 
 @app.route('/waiter/restaurant')
@@ -491,7 +494,7 @@ def waiter_my_restaurant():
         flash('Nie masz przypisanej restauracji', 'warning')
         return redirect(url_for('login'))
 
-    return redirect(url_for('waiter_restaurant_view', restaurant_id=assigned_restaurant['id']))
+    return redirect(url_for('waiter_restaurant_view', restaurant_id=assigned_restaurant.id))
 
 
 @app.route('/waiter/restaurant/<int:restaurant_id>')
@@ -509,11 +512,11 @@ def waiter_restaurant_view(restaurant_id):
         flash('Nie masz przypisanej restauracji', 'warning')
         return redirect(url_for('login'))
 
-    if assigned_restaurant['id'] != restaurant_id:
+    if assigned_restaurant.id != restaurant_id:
         flash('Nie masz dostępu do tej restauracji', 'danger')
         return redirect(url_for('waiter_my_restaurant'))
 
-    restaurant = next((r for r in restaurants if r['id'] == restaurant_id), None)
+    restaurant = Restaurant.query.get(restaurant_id)
     if not restaurant:
         flash('Restauracja nie znaleziona', 'danger')
         return redirect(url_for('waiter_my_restaurant'))
@@ -619,11 +622,11 @@ def waiter_floor_plan(restaurant_id):
         flash('Nie masz przypisanej restauracji', 'warning')
         return redirect(url_for('login'))
 
-    if assigned_restaurant['id'] != restaurant_id:
+    if assigned_restaurant.id != restaurant_id:
         flash('Nie masz dostępu do tej restauracji', 'danger')
         return redirect(url_for('waiter_my_restaurant'))
 
-    restaurant = next((r for r in restaurants if r['id'] == restaurant_id), None)
+    restaurant = Restaurant.query.get(restaurant_id)
     if not restaurant:
         flash('Restauracja nie znaleziona', 'danger')
         return redirect(url_for('waiter_my_restaurant'))
