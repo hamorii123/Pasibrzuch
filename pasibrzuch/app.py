@@ -3,7 +3,7 @@ from functools import wraps
 from datetime import datetime
 import json
 from flask_migrate import Migrate
-from models import db, User, Restaurant
+from models import db, User, Restaurant, Table
 
 app = Flask(__name__)
 app.secret_key = 'pasibrzuch_mobile_2024_secret'
@@ -12,121 +12,67 @@ app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///app.db'
 db.init_app(app)
 migrate = Migrate(app, db)
 
-# # Dane testowe
-# users = [
-#     {'id': 1, 'name': 'Jan Kowalski', 'email': 'klient@example.com', 'password': 'klient123', 'role': 'client'},
-#     {'id': 2, 'name': 'Anna Nowak', 'email': 'kelner@example.com', 'password': 'kelner123', 'role': 'waiter',
-#      'restaurant_id': 1},  # Przypisana do 13 Muz
-#     {'id': 3, 'name': 'Piotr Wiśniewski', 'email': 'manager@example.com', 'password': 'manager123', 'role': 'manager'},
-#     {'id': 4, 'name': 'Michał Kowalczyk', 'email': 'kelner2@example.com', 'password': 'kelner123', 'role': 'waiter',
-#      'restaurant_id': 2},  # Przypisana do La Bella Italia
-# ]
-# # Dodaj bardziej szczegółowe dane dla restauracji
-# restaurants = [
-#     {
-#         'id': 1,
-#         'name': '13 Muz',
-#         'address': 'ul. Restauracyjna 13, Szczecin',
-#         'rating': 4.7,
-#         'cuisine': 'Polska',
-#         'delivery': True,
-#         'reservation': True,
-#         'opening_hours': '12:00-22:00',
-#         'delivery_time': '30-45 min',
-#         'floor_plan': {
-#             'width': 800,
-#             'height': 600,
-#             'background_color': '#f8f9fa',
-#             'tables': [
-#                 {'id': 1, 'x': 100, 'y': 100, 'rotation': 0, 'shape': 'rectangle', 'width': 80, 'height': 120},
-#                 {'id': 2, 'x': 250, 'y': 150, 'rotation': 45, 'shape': 'circle', 'radius': 60},
-#                 {'id': 3, 'x': 450, 'y': 200, 'rotation': 0, 'shape': 'rectangle', 'width': 100, 'height': 80},
-#                 {'id': 4, 'x': 650, 'y': 300, 'rotation': 90, 'shape': 'circle', 'radius': 70},
-#                 {'id': 5, 'x': 300, 'y': 400, 'rotation': 0, 'shape': 'rectangle', 'width': 120, 'height': 80},
-#                 {'id': 6, 'x': 500, 'y': 450, 'rotation': 30, 'shape': 'circle', 'radius': 50},
-#                 {'id': 7, 'x': 100, 'y': 500, 'rotation': 0, 'shape': 'rectangle', 'width': 150, 'height': 100},
-#                 {'id': 8, 'x': 700, 'y': 100, 'rotation': 0, 'shape': 'circle', 'radius': 40},
-#             ]
-#         }
-#     },
-#     {
-#         'id': 2,
-#         'name': 'La Bella Italia',
-#         'address': 'ul. Włoska 5, Szczecin',
-#         'rating': 4.5,
-#         'cuisine': 'Włoska',
-#         'delivery': True,
-#         'reservation': True,
-#         'opening_hours': '11:00-23:00',
-#         'delivery_time': '25-40 min',
-#         'floor_plan': {
-#             'width': 900,
-#             'height': 700,
-#             'background_color': '#fff5e6',
-#             'tables': [
-#                 {'id': 9, 'x': 150, 'y': 150, 'rotation': 0, 'shape': 'rectangle', 'width': 90, 'height': 140},
-#                 {'id': 10, 'x': 350, 'y': 200, 'rotation': 0, 'shape': 'circle', 'radius': 65},
-#                 {'id': 11, 'x': 550, 'y': 250, 'rotation': 0, 'shape': 'rectangle', 'width': 110, 'height': 90},
-#                 {'id': 12, 'x': 750, 'y': 350, 'rotation': 0, 'shape': 'circle', 'radius': 75},
-#             ]
-#         }
-#     }
-# ]
+@app.context_processor
+def inject_now():
+    return {'now': datetime.now()}
 
 # Rozbudowane dane dla stolików
-def get_tables_for_restaurant(restaurant_id):
-    """Pobierz stoliki dla konkretnej restauracji"""
-    if restaurant_id == 1:
-        return [
-            {'id': 1, 'number': '1', 'seats': 2, 'status': 'free', 'location': 'Przy oknie',
-             'shape': 'rectangle', 'width': 80, 'height': 120, 'x': 100, 'y': 100, 'rotation': 0,
-             'reservation': None},
-            {'id': 2, 'number': '2', 'seats': 4, 'status': 'occupied', 'location': 'Centrum sali',
-             'shape': 'circle', 'radius': 60, 'x': 250, 'y': 150, 'rotation': 45,
-             'reservation': {'time': '14:30', 'name': 'Jan Kowalski', 'people': 4, 'duration': 90}},
-            {'id': 3, 'number': '3', 'seats': 2, 'status': 'free', 'location': 'Przy wejściu',
-             'shape': 'rectangle', 'width': 100, 'height': 80, 'x': 450, 'y': 200, 'rotation': 0,
-             'reservation': None},
-            {'id': 4, 'number': '4', 'seats': 6, 'status': 'reserved', 'location': 'Centrum sali',
-             'shape': 'circle', 'radius': 70, 'x': 650, 'y': 300, 'rotation': 90,
-             'reservation': {'time': '18:00', 'name': 'Anna Kowalska', 'people': 4, 'duration': 120}},
-            {'id': 5, 'number': '5', 'seats': 2, 'status': 'cleaning', 'location': 'Przy barze',
-             'shape': 'rectangle', 'width': 120, 'height': 80, 'x': 300, 'y': 400, 'rotation': 0,
-             'reservation': None},
-            {'id': 6, 'number': '6', 'seats': 4, 'status': 'occupied', 'location': 'Przy oknie',
-             'shape': 'circle', 'radius': 50, 'x': 500, 'y': 450, 'rotation': 30,
-             'reservation': {'time': '13:00', 'name': 'Piotr Wiśniewski', 'people': 3, 'duration': 60}},
-            {'id': 7, 'number': '7', 'seats': 8, 'status': 'free', 'location': 'VIP',
-             'shape': 'rectangle', 'width': 150, 'height': 100, 'x': 100, 'y': 500, 'rotation': 0,
-             'reservation': None},
-            {'id': 8, 'number': '8', 'seats': 4, 'status': 'reserved', 'location': 'Przy kominku',
-             'shape': 'circle', 'radius': 40, 'x': 700, 'y': 100, 'rotation': 0,
-             'reservation': {'time': '20:30', 'name': 'Michał Nowak', 'people': 2, 'duration': 90}},
-        ]
-    if restaurant_id == 2:
-        return [
-            {'id': 9, 'number': '1', 'seats': 4, 'status': 'free', 'location': 'Taraz',
-             'shape': 'rectangle', 'width': 90, 'height': 140, 'x': 150, 'y': 150, 'rotation': 0,
-             'reservation': None},
-            {'id': 10, 'number': '2', 'seats': 6, 'status': 'occupied', 'location': 'Centrum',
-             'shape': 'circle', 'radius': 65, 'x': 350, 'y': 200, 'rotation': 0,
-             'reservation': {'time': '15:00', 'name': 'Katarzyna Zielińska', 'people': 5, 'duration': 90}},
-            {'id': 11, 'number': '3', 'seats': 2, 'status': 'free', 'location': 'Przy kuchni',
-             'shape': 'rectangle', 'width': 110, 'height': 90, 'x': 550, 'y': 250, 'rotation': 0,
-             'reservation': None},
-            {'id': 12, 'number': '4', 'seats': 8, 'status': 'reserved', 'location': 'VIP',
-             'shape': 'circle', 'radius': 75, 'x': 750, 'y': 350, 'rotation': 0,
-             'reservation': {'time': '19:30', 'name': 'Robert Lewandowski', 'people': 7, 'duration': 120}},
-        ]
+# def get_tables_for_restaurant(restaurant_id):
+#     """Pobierz stoliki dla konkretnej restauracji"""
+#     if restaurant_id == 1:
+#         return [
+#             {'id': 1, 'number': '1', 'seats': 2, 'status': 'free', 'location': 'Przy oknie',
+#              'shape': 'rectangle', 'width': 80, 'height': 120, 'x': 100, 'y': 100, 'rotation': 0,
+#              'reservation': None},
+#             {'id': 2, 'number': '2', 'seats': 4, 'status': 'occupied', 'location': 'Centrum sali',
+#              'shape': 'circle', 'radius': 60, 'x': 250, 'y': 150, 'rotation': 45,
+#              'reservation': {'time': '14:30', 'name': 'Jan Kowalski', 'people': 4, 'duration': 90}},
+#             {'id': 3, 'number': '3', 'seats': 2, 'status': 'free', 'location': 'Przy wejściu',
+#              'shape': 'rectangle', 'width': 100, 'height': 80, 'x': 450, 'y': 200, 'rotation': 0,
+#              'reservation': None},
+#             {'id': 4, 'number': '4', 'seats': 6, 'status': 'reserved', 'location': 'Centrum sali',
+#              'shape': 'circle', 'radius': 70, 'x': 650, 'y': 300, 'rotation': 90,
+#              'reservation': {'time': '18:00', 'name': 'Anna Kowalska', 'people': 4, 'duration': 120}},
+#             {'id': 5, 'number': '5', 'seats': 2, 'status': 'cleaning', 'location': 'Przy barze',
+#              'shape': 'rectangle', 'width': 120, 'height': 80, 'x': 300, 'y': 400, 'rotation': 0,
+#              'reservation': None},
+#             {'id': 6, 'number': '6', 'seats': 4, 'status': 'occupied', 'location': 'Przy oknie',
+#              'shape': 'circle', 'radius': 50, 'x': 500, 'y': 450, 'rotation': 30,
+#              'reservation': {'time': '13:00', 'name': 'Piotr Wiśniewski', 'people': 3, 'duration': 60}},
+#             {'id': 7, 'number': '7', 'seats': 8, 'status': 'free', 'location': 'VIP',
+#              'shape': 'rectangle', 'width': 150, 'height': 100, 'x': 100, 'y': 500, 'rotation': 0,
+#              'reservation': None},
+#             {'id': 8, 'number': '8', 'seats': 4, 'status': 'reserved', 'location': 'Przy kominku',
+#              'shape': 'circle', 'radius': 40, 'x': 700, 'y': 100, 'rotation': 0,
+#              'reservation': {'time': '20:30', 'name': 'Michał Nowak', 'people': 2, 'duration': 90}},
+#         ]
+#     if restaurant_id == 2:
+#         return [
+#             {'id': 9, 'number': '1', 'seats': 4, 'status': 'free', 'location': 'Taraz',
+#              'shape': 'rectangle', 'width': 90, 'height': 140, 'x': 150, 'y': 150, 'rotation': 0,
+#              'reservation': None},
+#             {'id': 10, 'number': '2', 'seats': 6, 'status': 'occupied', 'location': 'Centrum',
+#              'shape': 'circle', 'radius': 65, 'x': 350, 'y': 200, 'rotation': 0,
+#              'reservation': {'time': '15:00', 'name': 'Katarzyna Zielińska', 'people': 5, 'duration': 90}},
+#             {'id': 11, 'number': '3', 'seats': 2, 'status': 'free', 'location': 'Przy kuchni',
+#              'shape': 'rectangle', 'width': 110, 'height': 90, 'x': 550, 'y': 250, 'rotation': 0,
+#              'reservation': None},
+#             {'id': 12, 'number': '4', 'seats': 8, 'status': 'reserved', 'location': 'VIP',
+#              'shape': 'circle', 'radius': 75, 'x': 750, 'y': 350, 'rotation': 0,
+#              'reservation': {'time': '19:30', 'name': 'Robert Lewandowski', 'people': 7, 'duration': 120}},
+#        ]
 # Dane testowe dla stolików
-tables = [
-    {'id': 1, 'number': '1', 'seats': 2, 'available': True},
-    {'id': 2, 'number': '2', 'seats': 4, 'available': True},
-    {'id': 3, 'number': '3', 'seats': 2, 'available': False},
-    {'id': 4, 'number': '4', 'seats': 6, 'available': True},
-    {'id': 5, 'number': '5', 'seats': 2, 'available': True},
-    {'id': 6, 'number': '6', 'seats': 4, 'available': True},
-]
+# tables = [
+#     {'id': 1, 'number': '1', 'seats': 2, 'available': True},
+#     {'id': 2, 'number': '2', 'seats': 4, 'available': True},
+#     {'id': 3, 'number': '3', 'seats': 2, 'available': False},
+#     {'id': 4, 'number': '4', 'seats': 6, 'available': True},
+#     {'id': 5, 'number': '5', 'seats': 2, 'available': True},
+#     {'id': 6, 'number': '6', 'seats': 4, 'available': True},
+# ]
+
+def get_tables_for_restaurant(restaurant_id):
+    return Table.query.filter_by(restaurant_id=restaurant_id).all()
 
 # Dane testowe dla koszyka
 sample_cart = [
@@ -374,6 +320,7 @@ def client_reservation(restaurant_id):
         return redirect(url_for('login'))
 
     restaurant = Restaurant.query.get(restaurant_id)
+    tables = get_tables_for_restaurant(restaurant_id)
 
     if not restaurant:
         flash('Restauracja nie znaleziona', 'danger')
@@ -381,7 +328,9 @@ def client_reservation(restaurant_id):
 
     return render_template('client/reservation_mobile.html',
                            restaurant=restaurant,
-                           tables=tables)
+                           tables=tables,
+                           now=datetime.now()
+                           )
 
 
 @app.route('/client/reservation/<int:restaurant_id>/submit', methods=['POST'])
@@ -521,43 +470,23 @@ def waiter_restaurant_view(restaurant_id):
         flash('Restauracja nie znaleziona', 'danger')
         return redirect(url_for('waiter_my_restaurant'))
 
-    # Dane testowe dla planu sali
-    tables_data = [
-        {'id': 1, 'number': '1', 'seats': 2, 'status': 'free', 'location': 'Przy oknie', 'reservation': None},
-        {'id': 2, 'number': '2', 'seats': 4, 'status': 'occupied', 'location': 'Centrum sali',
-         'reservation': {'time': '14:30', 'name': 'Jan Kowalski', 'people': 4, 'duration': 90}},
-        {'id': 3, 'number': '3', 'seats': 2, 'status': 'free', 'location': 'Przy wejściu', 'reservation': None},
-        {'id': 4, 'number': '4', 'seats': 6, 'status': 'reserved', 'location': 'Centrum sali',
-         'reservation': {'time': '18:00', 'name': 'Anna Kowalska', 'people': 4, 'duration': 120}},
-        {'id': 5, 'number': '5', 'seats': 2, 'status': 'cleaning', 'location': 'Przy barze', 'reservation': None},
-        {'id': 6, 'number': '6', 'seats': 4, 'status': 'occupied', 'location': 'Przy oknie',
-         'reservation': {'time': '13:00', 'name': 'Piotr Wiśniewski', 'people': 3, 'duration': 60}},
-        {'id': 7, 'number': '7', 'seats': 8, 'status': 'free', 'location': 'VIP', 'reservation': None},
-        {'id': 8, 'number': '8', 'seats': 4, 'status': 'reserved', 'location': 'Przy kominku',
-         'reservation': {'time': '20:30', 'name': 'Michał Nowak', 'people': 2, 'duration': 90}},
-    ]
+    tables_data=Table.query.filter_by(
+        restaurant_id=restaurant_id
+    ).all()
 
     # Statystyki
     stats = {
-        'free': len([t for t in tables_data if t['status'] == 'free']),
-        'occupied': len([t for t in tables_data if t['status'] == 'occupied']),
-        'reserved': len([t for t in tables_data if t['status'] == 'reserved']),
-        'cleaning': len([t for t in tables_data if t['status'] == 'cleaning'])
+        'free': len([t for t in tables_data if t.status == 'free']),
+        'occupied': len([t for t in tables_data if t.status == 'occupied']),
+        'reserved': len([t for t in tables_data if t.status == 'reserved']),
+        'cleaning': len([t for t in tables_data if t.status == 'cleaning'])
     }
-
-    # Nadchodzące rezerwacje
-    upcoming_reservations = [
-        {'table': '4', 'time': '18:00', 'name': 'Anna Kowalska', 'people': 4,
-         'notes': '24 kwiaty, 14 czerwiec, 16 róża'},
-        {'table': '7', 'time': '20:30', 'name': 'Michał Nowak', 'people': 2, 'notes': 'Zakończone 2015'},
-        {'table': '2', 'time': '21:00', 'name': 'Piotr Wiśniewski', 'people': 8, 'notes': 'Przygotowanie wystąpienia'},
-    ]
 
     return render_template('waiter/restaurant_view.html',
                            restaurant=restaurant,
                            tables=tables_data,
                            stats=stats,
-                           upcoming_reservations=upcoming_reservations,
+                           upcoming_reservations=[],#upcoming_reservations,
                            current_date=datetime.now().strftime('%A, %d %B %Y'),
                            current_time=datetime.now().strftime('%H:%M'),
                            assigned_restaurant=assigned_restaurant)

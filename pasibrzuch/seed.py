@@ -1,12 +1,13 @@
 import json
 
 from app import app
-from models import db, User, Restaurant
+from models import db, User, Restaurant, Table
 
 
 with app.app_context():
 
     # Wyczyść stare dane
+    Table.query.delete()
     User.query.delete()
     Restaurant.query.delete()
 
@@ -62,89 +63,7 @@ with app.app_context():
         reservation=True,
         opening_hours='12:00-22:00',
         delivery_time='30-45 min',
-        floor_plan=json.dumps({
-            'width': 800,
-            'height': 600,
-            'background_color': '#f8f9fa',
 
-            'tables': [
-                {
-                    'id': 1,
-                    'x': 100,
-                    'y': 100,
-                    'rotation': 0,
-                    'shape': 'rectangle',
-                    'width': 80,
-                    'height': 120
-                },
-
-                {
-                    'id': 2,
-                    'x': 250,
-                    'y': 150,
-                    'rotation': 45,
-                    'shape': 'circle',
-                    'radius': 60
-                },
-
-                {
-                    'id': 3,
-                    'x': 450,
-                    'y': 200,
-                    'rotation': 0,
-                    'shape': 'rectangle',
-                    'width': 100,
-                    'height': 80
-                },
-
-                {
-                    'id': 4,
-                    'x': 650,
-                    'y': 300,
-                    'rotation': 90,
-                    'shape': 'circle',
-                    'radius': 70
-                },
-
-                {
-                    'id': 5,
-                    'x': 300,
-                    'y': 400,
-                    'rotation': 0,
-                    'shape': 'rectangle',
-                    'width': 120,
-                    'height': 80
-                },
-
-                {
-                    'id': 6,
-                    'x': 500,
-                    'y': 450,
-                    'rotation': 30,
-                    'shape': 'circle',
-                    'radius': 50
-                },
-
-                {
-                    'id': 7,
-                    'x': 100,
-                    'y': 500,
-                    'rotation': 0,
-                    'shape': 'rectangle',
-                    'width': 150,
-                    'height': 100
-                },
-
-                {
-                    'id': 8,
-                    'x': 700,
-                    'y': 100,
-                    'rotation': 0,
-                    'shape': 'circle',
-                    'radius': 40
-                }
-            ]
-        })
     )
 
     restaurant2 = Restaurant(
@@ -157,21 +76,245 @@ with app.app_context():
         reservation=True,
         opening_hours='11:00-23:00',
         delivery_time='25-40 min',
-        floor_plan = json.dumps({
-        'width': 900,
-        'height': 700,
-        'background_color': '#fff5e6',
-        'tables': [
-            {'id': 9, 'x': 150, 'y': 150, 'rotation': 0, 'shape': 'rectangle', 'width': 90, 'height': 140},
-            {'id': 10, 'x': 350, 'y': 200, 'rotation': 0, 'shape': 'circle', 'radius': 65},
-            {'id': 11, 'x': 550, 'y': 250, 'rotation': 0, 'shape': 'rectangle', 'width': 110, 'height': 90},
-            {'id': 12, 'x': 750, 'y': 350, 'rotation': 0, 'shape': 'circle', 'radius': 75}
-        ]
-        })
     )
 
     db.session.add(restaurant1)
     db.session.add(restaurant2)
+
+    tables = [
+
+        # =========================
+        # RESTAURANT 1 - 13 Muz
+        # =========================
+
+        Table(
+            id=1,
+            restaurant_id=1,
+            number='1',
+            seats=2,
+            status='free',
+            location='Przy oknie',
+
+            x=100,
+            y=100,
+
+            shape='rectangle',
+
+            width=80,
+            height=120,
+
+            rotation=0
+        ),
+
+        Table(
+            id=2,
+            restaurant_id=1,
+            number='2',
+            seats=4,
+            status='occupied',
+            location='Centrum sali',
+
+            x=250,
+            y=150,
+
+            shape='circle',
+
+            radius=60,
+
+            rotation=45
+        ),
+
+        Table(
+            id=3,
+            restaurant_id=1,
+            number='3',
+            seats=2,
+            status='free',
+            location='Przy wejściu',
+
+            x=450,
+            y=200,
+
+            shape='rectangle',
+
+            width=100,
+            height=80,
+
+            rotation=0
+        ),
+
+        Table(
+            id=4,
+            restaurant_id=1,
+            number='4',
+            seats=6,
+            status='reserved',
+            location='Centrum sali',
+
+            x=650,
+            y=300,
+
+            shape='circle',
+
+            radius=70,
+
+            rotation=90
+        ),
+
+        Table(
+            id=5,
+            restaurant_id=1,
+            number='5',
+            seats=2,
+            status='cleaning',
+            location='Przy barze',
+
+            x=300,
+            y=400,
+
+            shape='rectangle',
+
+            width=120,
+            height=80,
+
+            rotation=0
+        ),
+
+        Table(
+            id=6,
+            restaurant_id=1,
+            number='6',
+            seats=4,
+            status='occupied',
+            location='Przy oknie',
+
+            x=500,
+            y=450,
+
+            shape='circle',
+
+            radius=50,
+
+            rotation=30
+        ),
+
+        Table(
+            id=7,
+            restaurant_id=1,
+            number='7',
+            seats=8,
+            status='free',
+            location='VIP',
+
+            x=100,
+            y=500,
+
+            shape='rectangle',
+
+            width=150,
+            height=100,
+
+            rotation=0
+        ),
+
+        Table(
+            id=8,
+            restaurant_id=1,
+            number='8',
+            seats=4,
+            status='reserved',
+            location='Przy kominku',
+
+            x=700,
+            y=100,
+
+            shape='circle',
+
+            radius=40,
+
+            rotation=0
+        ),
+
+        # =========================
+        # RESTAURANT 2 - La Bella Italia
+        # =========================
+
+        Table(
+            id=9,
+            restaurant_id=2,
+            number='1',
+            seats=4,
+            status='free',
+            location='Taras',
+
+            x=150,
+            y=150,
+
+            shape='rectangle',
+
+            width=90,
+            height=140,
+
+            rotation=0
+        ),
+
+        Table(
+            id=10,
+            restaurant_id=2,
+            number='2',
+            seats=6,
+            status='occupied',
+            location='Centrum',
+
+            x=350,
+            y=200,
+
+            shape='circle',
+
+            radius=65,
+
+            rotation=0
+        ),
+
+        Table(
+            id=11,
+            restaurant_id=2,
+            number='3',
+            seats=2,
+            status='free',
+            location='Przy kuchni',
+
+            x=550,
+            y=250,
+
+            shape='rectangle',
+
+            width=110,
+            height=90,
+
+            rotation=0
+        ),
+
+        Table(
+            id=12,
+            restaurant_id=2,
+            number='4',
+            seats=8,
+            status='reserved',
+            location='VIP',
+
+            x=750,
+            y=350,
+
+            shape='circle',
+
+            radius=75,
+
+            rotation=0
+        )
+    ]
+
+    db.session.add_all(tables)
 
     db.session.commit()
 
