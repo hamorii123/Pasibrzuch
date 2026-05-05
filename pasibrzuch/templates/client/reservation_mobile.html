@@ -351,7 +351,7 @@ async function submitReservation() {
     const notes = document.getElementById('reservationNotes').value;
 
     try {
-        const response = await fetch('{{ url_for("client_reservation", restaurant_id=restaurant.id) }}', {
+        const response = await fetch('{{ url_for("submit_reservation", restaurant_id=restaurant.id) }}', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',

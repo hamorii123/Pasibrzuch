@@ -1,4 +1,5 @@
 from flask_sqlalchemy import SQLAlchemy
+from datetime import datetime
 import json
 
 db = SQLAlchemy()
@@ -85,3 +86,45 @@ class Table(db.Model):
         'Restaurant',
         backref='tables'
     )
+
+class Reservation(db.Model):
+    __tablename__ = 'reservations'
+
+    id = db.Column(db.Integer, primary_key=True)
+
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    restaurant_id = db.Column(db.Integer, db.ForeignKey('restaurants.id'), nullable=False)
+    table_id = db.Column(db.Integer, db.ForeignKey('tables.id'), nullable=False)
+
+    date = db.Column(db.Date, nullable=False)
+    time = db.Column(db.Time, nullable=False)
+
+    people = db.Column(db.Integer, nullable=False)
+
+    status = db.Column(db.String(20), default='pending')  # pending, confirmed, cancelled
+
+    notes = db.Column(db.Text)
+
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    user = db.relationship('User', backref='reservations')
+    table = db.relationship('Table', backref='reservations')
+    restaurant = db.relationship('Restaurant', backref='reservations')
+
+class MenuItem(db.Model):
+    __tablename__ = 'menu_items'
+
+    id = db.Column(db.Integer, primary_key=True)
+
+    restaurant_id = db.Column(db.Integer, db.ForeignKey('restaurants.id'))
+
+    name = db.Column(db.String(100))
+    price = db.Column(db.Float)
+
+    category = db.Column(db.String(50))
+    description = db.Column(db.Text)
+
+    available = db.Column(db.Boolean, default=True)
+
+    restaurant = db.relationship('Restaurant', backref='menu_items')
+

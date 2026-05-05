@@ -3,7 +3,7 @@ from functools import wraps
 from datetime import datetime
 import json
 from flask_migrate import Migrate
-from models import db, User, Restaurant, Table
+from models import db, User, Restaurant, Table, Reservation, MenuItem
 
 app = Flask(__name__)
 app.secret_key = 'pasibrzuch_mobile_2024_secret'
@@ -15,61 +15,6 @@ migrate = Migrate(app, db)
 @app.context_processor
 def inject_now():
     return {'now': datetime.now()}
-
-# Rozbudowane dane dla stolików
-# def get_tables_for_restaurant(restaurant_id):
-#     """Pobierz stoliki dla konkretnej restauracji"""
-#     if restaurant_id == 1:
-#         return [
-#             {'id': 1, 'number': '1', 'seats': 2, 'status': 'free', 'location': 'Przy oknie',
-#              'shape': 'rectangle', 'width': 80, 'height': 120, 'x': 100, 'y': 100, 'rotation': 0,
-#              'reservation': None},
-#             {'id': 2, 'number': '2', 'seats': 4, 'status': 'occupied', 'location': 'Centrum sali',
-#              'shape': 'circle', 'radius': 60, 'x': 250, 'y': 150, 'rotation': 45,
-#              'reservation': {'time': '14:30', 'name': 'Jan Kowalski', 'people': 4, 'duration': 90}},
-#             {'id': 3, 'number': '3', 'seats': 2, 'status': 'free', 'location': 'Przy wejściu',
-#              'shape': 'rectangle', 'width': 100, 'height': 80, 'x': 450, 'y': 200, 'rotation': 0,
-#              'reservation': None},
-#             {'id': 4, 'number': '4', 'seats': 6, 'status': 'reserved', 'location': 'Centrum sali',
-#              'shape': 'circle', 'radius': 70, 'x': 650, 'y': 300, 'rotation': 90,
-#              'reservation': {'time': '18:00', 'name': 'Anna Kowalska', 'people': 4, 'duration': 120}},
-#             {'id': 5, 'number': '5', 'seats': 2, 'status': 'cleaning', 'location': 'Przy barze',
-#              'shape': 'rectangle', 'width': 120, 'height': 80, 'x': 300, 'y': 400, 'rotation': 0,
-#              'reservation': None},
-#             {'id': 6, 'number': '6', 'seats': 4, 'status': 'occupied', 'location': 'Przy oknie',
-#              'shape': 'circle', 'radius': 50, 'x': 500, 'y': 450, 'rotation': 30,
-#              'reservation': {'time': '13:00', 'name': 'Piotr Wiśniewski', 'people': 3, 'duration': 60}},
-#             {'id': 7, 'number': '7', 'seats': 8, 'status': 'free', 'location': 'VIP',
-#              'shape': 'rectangle', 'width': 150, 'height': 100, 'x': 100, 'y': 500, 'rotation': 0,
-#              'reservation': None},
-#             {'id': 8, 'number': '8', 'seats': 4, 'status': 'reserved', 'location': 'Przy kominku',
-#              'shape': 'circle', 'radius': 40, 'x': 700, 'y': 100, 'rotation': 0,
-#              'reservation': {'time': '20:30', 'name': 'Michał Nowak', 'people': 2, 'duration': 90}},
-#         ]
-#     if restaurant_id == 2:
-#         return [
-#             {'id': 9, 'number': '1', 'seats': 4, 'status': 'free', 'location': 'Taraz',
-#              'shape': 'rectangle', 'width': 90, 'height': 140, 'x': 150, 'y': 150, 'rotation': 0,
-#              'reservation': None},
-#             {'id': 10, 'number': '2', 'seats': 6, 'status': 'occupied', 'location': 'Centrum',
-#              'shape': 'circle', 'radius': 65, 'x': 350, 'y': 200, 'rotation': 0,
-#              'reservation': {'time': '15:00', 'name': 'Katarzyna Zielińska', 'people': 5, 'duration': 90}},
-#             {'id': 11, 'number': '3', 'seats': 2, 'status': 'free', 'location': 'Przy kuchni',
-#              'shape': 'rectangle', 'width': 110, 'height': 90, 'x': 550, 'y': 250, 'rotation': 0,
-#              'reservation': None},
-#             {'id': 12, 'number': '4', 'seats': 8, 'status': 'reserved', 'location': 'VIP',
-#              'shape': 'circle', 'radius': 75, 'x': 750, 'y': 350, 'rotation': 0,
-#              'reservation': {'time': '19:30', 'name': 'Robert Lewandowski', 'people': 7, 'duration': 120}},
-#        ]
-# Dane testowe dla stolików
-# tables = [
-#     {'id': 1, 'number': '1', 'seats': 2, 'available': True},
-#     {'id': 2, 'number': '2', 'seats': 4, 'available': True},
-#     {'id': 3, 'number': '3', 'seats': 2, 'available': False},
-#     {'id': 4, 'number': '4', 'seats': 6, 'available': True},
-#     {'id': 5, 'number': '5', 'seats': 2, 'available': True},
-#     {'id': 6, 'number': '6', 'seats': 4, 'available': True},
-# ]
 
 def get_tables_for_restaurant(restaurant_id):
     return Table.query.filter_by(restaurant_id=restaurant_id).all()
@@ -332,7 +277,6 @@ def client_reservation(restaurant_id):
                            now=datetime.now()
                            )
 
-
 @app.route('/client/reservation/<int:restaurant_id>/submit', methods=['POST'])
 @login_required
 def submit_reservation(restaurant_id):
@@ -343,13 +287,51 @@ def submit_reservation(restaurant_id):
     try:
         data = request.get_json()
 
-        # W rzeczywistej aplikacji zapisalibyśmy do bazy danych
-        reservation_id = 1001  # Przykładowe ID
+        # --- walidacja minimalna ---
+        table_id = int(data.get('tableId'))
+        people = int(data.get('people'))
+        notes = data.get('notes', '')
+
+        res_date = datetime.strptime(data.get('date'), "%Y-%m-%d").date()
+        res_time = datetime.strptime(data.get('time'), "%H:%M").time()
+
+        table = Table.query.filter_by(
+            id=table_id,
+            restaurant_id=restaurant_id
+        ).first()
+
+        if not table:
+            return jsonify({'success': False, 'message': 'Stolik nie istnieje'}), 404
+
+        if table.seats < people:
+            return jsonify({'success': False, 'message': 'Za mały stolik'}), 400
+
+        if table.status != 'free':
+            return jsonify({'success': False, 'message': 'Stolik niedostępny'}), 400
+
+        # --- tworzenie rezerwacji ---
+        reservation = Reservation(
+            user_id=session['user_id'],
+            restaurant_id=restaurant_id,
+            table_id=table_id,
+            date=res_date,
+            time=res_time,
+            people=people,
+            notes=notes,
+            status='pending'
+        )
+
+        # --- zmiana statusu stolika ---
+        table.status = 'reserved'
+
+        db.session.add(reservation)
+        db.session.commit()
+
 
         return jsonify({
             'success': True,
-            'message': f'Rezerwacja została potwierdzona. Numer rezerwacji: #{reservation_id}',
-            'reservation_id': reservation_id
+            'message': f'Rezerwacja została potwierdzona. Numer rezerwacji: #{reservation.id}',
+            'reservation_id': reservation.id
         })
     except Exception as e:
         return jsonify({'success': False, 'message': str(e)})
