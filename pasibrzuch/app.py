@@ -543,7 +543,23 @@ def waiter_floor_plan(restaurant_id):
         return redirect(url_for('waiter_my_restaurant'))
 
     # Użyj funkcji get_tables_for_restaurant zamiast bezpośredniego dostępu
-    tables_data = get_tables_for_restaurant(restaurant_id)
+    #tables_data = get_tables_for_restaurant(restaurant_id)
+    tables_data = [
+        {
+            "id": t.id,
+            "number": t.number,
+            "seats": t.seats,
+            "status": t.status,
+            "shape": t.shape,
+            "width": t.width,
+            "height": t.height,
+            "radius": t.radius,
+            "x": t.x,
+            "y": t.y,
+            "rotation": t.rotation,
+        }
+        for t in get_tables_for_restaurant(restaurant_id)
+    ]
 
     return render_template('waiter/floor_plan_editor.html',
                            restaurant=restaurant,
