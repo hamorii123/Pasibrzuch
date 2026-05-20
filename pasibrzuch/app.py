@@ -271,9 +271,27 @@ def client_reservation(restaurant_id):
         flash('Restauracja nie znaleziona', 'danger')
         return redirect(url_for('client_restaurants'))
 
+    # Konwersja obiektów Table na słowniki (JSON serializable)
+    tables_data = []
+    for table in tables:
+        tables_data.append({
+            'id': table.id,
+            'number': table.number,
+            'seats': table.seats,
+            'status': table.status,
+            'shape': table.shape,
+            'width': table.width,
+            'height': table.height,
+            'radius': table.radius,
+            'x': table.x,
+            'y': table.y,
+            'rotation': table.rotation,
+            'location': table.location
+        })
+
     return render_template('client/reservation_mobile.html',
                            restaurant=restaurant,
-                           tables=tables,
+                           tables=tables_data,
                            now=datetime.now()
                            )
 
@@ -483,17 +501,77 @@ def update_table_status(table_id):
 
     try:
         data = request.get_json()
-        status = data.get('status')
+        new_status = data.get('status')
 
-        # Tutaj w rzeczywistej aplikacji zapis do bazy danych
+        # Walidacja statusu
+        allowed_statuses = ['free', 'occupied', 'reserved', 'cleaning']
+        if new_status not in allowed_statuses:
+            return jsonify({'success': False, 'message': 'Nieprawidłowy status'})
+
+        # Pobierz stolik
+        table = Table.query.get(table_id)
+        if not table:
+            return jsonify({'success': False, 'message': 'Stolik nie istnieje'})
+
+        # Sprawdź czy kelner ma dostęp do restauracji tego stolika
+        user = User.query.get(session['user_id'])
+        if user.restaurant_id != table.restaurant_id:
+            return jsonify({'success': False, 'message': 'Brak dostępu do tego stolika'})
+
+        # Zaktualizuj status
+        table.status = new_status
+        db.session.commit()
+
         return jsonify({
             'success': True,
-            'message': f'Status stolika #{table_id} zmieniony na {status}',
-            'status': status
+            'message': f'Status stolika #{table.number} zmieniony na {new_status}',
+            'status': new_status
         })
     except Exception as e:
+        db.session.rollback()
         return jsonify({'success': False, 'message': str(e)})
 
+
+@app.route('/waiter/floor-plan/<int:restaurant_id>/save', methods=['POST'])
+@login_required
+def save_floor_plan(restaurant_id):
+    """Zapisanie planu sali (pozycje, wymiary, statusy)"""
+    if session.get('role') != 'waiter':
+        return jsonify({'success': False, 'message': 'Brak dostępu'})
+
+    try:
+        data = request.get_json()
+        tables_data = data.get('tables', [])
+
+        # Sprawdź czy kelner ma dostęp do tej restauracji
+        user = User.query.get(session['user_id'])
+        if user.restaurant_id != restaurant_id:
+            return jsonify({'success': False, 'message': 'Brak dostępu do tej restauracji'})
+
+        for table_info in tables_data:
+            table = Table.query.get(table_info.get('id'))
+            if table and table.restaurant_id == restaurant_id:
+                # Aktualizuj tylko dozwolone pola
+                table.x = table_info.get('x', table.x)
+                table.y = table_info.get('y', table.y)
+                table.shape = table_info.get('shape', table.shape)
+                table.width = table_info.get('width', table.width)
+                table.height = table_info.get('height', table.height)
+                table.radius = table_info.get('radius', table.radius)
+                table.rotation = table_info.get('rotation', table.rotation)
+                table.number = table_info.get('number', table.number)
+                table.seats = table_info.get('seats', table.seats)
+                # Uwaga: status może być aktualizowany tylko przez osobny endpoint, ale tu też można
+                # jeśli chcemy, żeby zapis planu też zapisywał statusy:
+                if 'status' in table_info:
+                    table.status = table_info.get('status')
+
+        db.session.commit()
+        return jsonify({'success': True, 'message': 'Plan sali zapisany pomyślnie'})
+
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'message': str(e)})
 
 @app.route('/waiter/notification', methods=['POST'])
 @login_required

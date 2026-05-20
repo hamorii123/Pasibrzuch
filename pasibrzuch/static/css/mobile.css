@@ -330,14 +330,16 @@ body {
     background-color: var(--dark);
     color: var(--white);
     padding: 12px 24px;
-    border-radius: var(--radius-md);
+    border-radius: 30px;   /* zmień z var(--radius-md) na 30px dla zaokrąglenia */
     box-shadow: var(--shadow-heavy);
     z-index: 2000;
     display: flex;
     align-items: center;
     gap: 8px;
-    max-width: 90%;
-    animation: slideIn 0.3s ease;
+    white-space: nowrap;
+    max-width: 90vw;
+    font-size: 14px;
+    font-weight: 500;
 }
 
 @keyframes slideIn {
@@ -569,4 +571,17 @@ body {
     .list-item {
         background-color: #2C2C2E;
     }
+}
+
+/* Poziome kroki rezerwacji */
+.reservation-steps {
+    display: flex !important;
+    flex-direction: row !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+}
+
+.step {
+    flex: 1 !important;
+    text-align: center !important;
 }

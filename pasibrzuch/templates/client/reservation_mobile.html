@@ -3,6 +3,7 @@
 {% block title %}Rezerwacja{% endblock %}
 
 {% block extra_css %}
+<style>
 .reservation-steps {
     display: flex;
     justify-content: space-between;
@@ -67,6 +68,7 @@
     border-radius: 8px;
     text-align: center;
     background: white;
+    cursor: pointer;
 }
 
 .time-slot.selected {
@@ -75,29 +77,70 @@
     border-color: var(--primary-orange);
 }
 
-.table-grid {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 12px;
-}
-
-.table-item {
-    padding: 16px;
-    border: 2px solid #ddd;
-    border-radius: 12px;
-    text-align: center;
-    background: white;
-}
-
-.table-item.selected {
-    border-color: var(--primary-orange);
-    background: rgba(255,107,53,0.1);
-}
-
-.table-item.unavailable {
-    opacity: 0.5;
+/* ========== NOWE STYLE DLA CANVAS ========== */
+.canvas-container {
     background: #f8f9fa;
+    border-radius: 12px;
+    padding: 8px;
+    margin-bottom: 16px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
 }
+
+#floorCanvas {
+    background: #ffffff;
+    border-radius: 8px;
+    border: 1px solid #eee;
+    display: block;
+    margin: 0 auto;
+    cursor: pointer;
+}
+
+.canvas-legend {
+    display: flex;
+    justify-content: center;
+    gap: 16px;
+    margin-top: 12px;
+    flex-wrap: wrap;
+}
+
+.legend-dot {
+    width: 16px;
+    height: 16px;
+    border-radius: 4px;
+    display: inline-block;
+    margin-right: 6px;
+}
+
+.legend-dot.free { background: #27AE60; }
+.legend-dot.occupied { background: #E74C3C; }
+.legend-dot.reserved { background: #F39C12; }
+.legend-dot.cleaning { background: #3498DB; }
+.legend-dot.disabled { background: #ccc; }
+
+.legend-text {
+    font-size: 12px;
+    color: #666;
+}
+
+.selected-table-info {
+    background: rgba(255,107,53,0.1);
+    border-radius: 8px;
+    padding: 12px;
+    margin-top: 12px;
+    text-align: center;
+}
+
+.selected-table-info strong {
+    color: var(--primary-orange);
+}
+
+.table-unavailable-message {
+    text-align: center;
+    padding: 20px;
+    color: #999;
+}
+</style>
 {% endblock %}
 
 {% block content %}
@@ -167,39 +210,42 @@
 
     <!-- Step 2: Table Selection -->
     <div id="step2Content" class="mobile-card" style="display: none;">
-        <h3 style="margin-bottom: 16px;">Wybierz stolik</h3>
-        <p style="color: var(--gray); margin-bottom: 16px;">
-            Wybrano: <span id="selectedDateTime">...</span> dla <span id="selectedPeople">2</span> osób
-        </p>
+    <h3 style="margin-bottom: 16px;">Wybierz stolik na planie sali</h3>
+    <p style="color: var(--gray); margin-bottom: 16px;">
+        Wybrano: <span id="selectedDateTime">...</span> dla <span id="selectedPeople">2</span> osób
+    </p>
 
-        <div class="table-grid" id="tablesGrid">
-            {% for table in tables %}
-            <div class="table-item"
-                 data-table-id="{{ table.id }}"
-                 data-seats="{{ table.seats }}"
-                 onclick="selectTable(this)">
-                <div style="font-size: 18px; font-weight: 700; margin-bottom: 8px;">
-                    Stolik {{ table.number }}
-                </div>
-                <div style="color: var(--gray);">
-                    <i class="fas fa-chair"></i> {{ table.seats }} miejsc
-                </div>
-                <div style="margin-top: 8px;">
-                    <span class="badge badge-success">Wolny</span>
-                </div>
-            </div>
-            {% endfor %}
-        </div>
-
-        <div style="display: flex; gap: 12px; margin-top: 16px;">
-            <button class="btn-mobile btn-secondary" onclick="backToStep1()">
-                Wróć
-            </button>
-            <button class="btn-mobile btn-primary" onclick="goToStep3()">
-                Dalej: Podsumowanie
-            </button>
-        </div>
+    <!-- Canvas z planem sali -->
+    <div class="canvas-container">
+        <canvas id="floorCanvas" width="600" height="400" style="width:100%; height:auto; max-width:600px; aspect-ratio:600/400"></canvas>
     </div>
+
+    <!-- Legenda -->
+    <div class="canvas-legend">
+        <div><span class="legend-dot free"></span><span class="legend-text">Wolny</span></div>
+        <div><span class="legend-dot occupied"></span><span class="legend-text">Zajęty</span></div>
+        <div><span class="legend-dot reserved"></span><span class="legend-text">Zarezerwowany</span></div>
+        <div><span class="legend-dot cleaning"></span><span class="legend-text">Sprzątanie</span></div>
+        <div><span class="legend-dot disabled"></span><span class="legend-text">Za mały</span></div>
+    </div>
+
+    <!-- Informacja o wybranym stoliku -->
+    <div id="selectedTableInfo" class="selected-table-info" style="display: none;">
+        Wybrany stolik: <strong id="selectedTableNumber">-</strong>
+        (<span id="selectedTableSeats">-</span> miejsc)
+    </div>
+
+    <div id="noAvailableTableMsg" class="table-unavailable-message" style="display: none;">
+        <i class="fas fa-info-circle"></i> Brak wolnych stolików dla wybranej liczby osób
+    </div>
+
+    <div style="display: flex; gap: 12px; margin-top: 16px;">
+        <button class="btn-mobile btn-secondary" onclick="backToStep1()">Wróć</button>
+        <button class="btn-mobile btn-primary" id="nextToStep3Btn" onclick="goToStep3()" disabled style="opacity:0.5;">
+            Dalej: Podsumowanie
+        </button>
+    </div>
+</div>
 
     <!-- Step 3: Confirmation -->
     <div id="step3Content" class="mobile-card" style="display: none;">
@@ -244,6 +290,224 @@
 </div>
 
 <script>
+    // ========== CANVAS RYSOWANIE STOLIKÓW ==========
+let canvas, ctx;
+let tablesData = {{ tables | tojson | safe }};
+let selectedTableId = null;
+let peopleFilter = 2;
+
+// Status colors
+const statusColors = {
+    'free': '#27AE60',
+    'occupied': '#E74C3C',
+    'reserved': '#F39C12',
+    'cleaning': '#3498DB'
+};
+
+function initCanvas() {
+    canvas = document.getElementById('floorCanvas');
+    if (!canvas) return;
+
+    ctx = canvas.getContext('2d');
+
+    // Ustaw rozmiar canvas
+    const container = canvas.parentElement;
+    const size = Math.min(container.clientWidth - 16, 600);
+    canvas.width = size;
+    canvas.height = size * (400/600);
+
+    drawTables();
+
+    // Dodaj event kliknięcia
+    canvas.addEventListener('click', handleCanvasClick);
+}
+
+function drawTables() {
+    if (!ctx) return;
+
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // Tło
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    // Skalowanie - dopasowanie do canvas
+    const scaleX = canvas.width / 800;
+    const scaleY = canvas.height / 600;
+
+    tablesData.forEach(table => {
+        // Sprawdź czy stolik spełnia warunek liczby miejsc
+        const meetsSeatsRequirement = table.seats >= peopleFilter;
+        const isAvailable = table.status === 'free' && meetsSeatsRequirement;
+        const isSelected = selectedTableId === table.id;
+
+        let color = statusColors[table.status] || statusColors.free;
+        let opacity = meetsSeatsRequirement ? 0.7 : 0.3;
+
+        if (!meetsSeatsRequirement) {
+            color = '#cccccc';
+            opacity = 0.4;
+        } else if (table.status !== 'free') {
+            opacity = 0.6;
+        }
+
+        const x = (table.x || 100) * scaleX;
+        const y = (table.y || 100) * scaleY;
+
+        ctx.save();
+        ctx.translate(x, y);
+
+        if (table.rotation) {
+            ctx.rotate(table.rotation * Math.PI / 180);
+        }
+
+        ctx.fillStyle = color;
+        ctx.globalAlpha = opacity;
+        // te 2 linijki zamieniłem
+        //ctx.strokeStyle = 'transparent';
+        // ctx.lineWidth = 0;
+
+        if (table.shape === 'circle') {
+            const radius = (table.radius || 50) * Math.min(scaleX, scaleY);
+            ctx.beginPath();
+            ctx.arc(0, 0, radius, 0, Math.PI * 2);
+            ctx.fill();
+            //ctx.stroke();
+
+            // Numer stolika
+            ctx.fillStyle = '#333';
+            ctx.globalAlpha = 1;
+            ctx.font = `bold ${Math.max(12, 16 * Math.min(scaleX, scaleY))}px Arial`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(table.number, 0, 0);
+
+        } else {
+            const width = (table.width || 100) * scaleX;
+            const height = (table.height || 80) * scaleY;
+            ctx.fillRect(-width/2, -height/2, width, height);
+            //ctx.strokeRect(-width/2, -height/2, width, height);
+
+            // Numer stolika
+            ctx.fillStyle = '#333';
+            ctx.globalAlpha = 1;
+            ctx.font = `bold ${Math.max(12, 16 * Math.min(scaleX, scaleY))}px Arial`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(table.number, 0, 0);
+        }
+
+        ctx.restore();
+    });
+}
+
+function handleCanvasClick(e) {
+    const rect = canvas.getBoundingClientRect();
+    const scaleXcanvas = canvas.width / rect.width;
+    const scaleYcanvas = canvas.height / rect.height;
+
+    let clickX = (e.clientX - rect.left) * scaleXcanvas;
+    let clickY = (e.clientY - rect.top) * scaleYcanvas;
+
+    // Skala rysowania
+    const drawScaleX = canvas.width / 800;
+    const drawScaleY = canvas.height / 600;
+
+    let clickedTable = null;
+
+    for (let table of tablesData) {
+        const tableX = (table.x || 100) * drawScaleX;
+        const tableY = (table.y || 100) * drawScaleY;
+
+        let hit = false;
+
+        if (table.shape === 'circle') {
+            const radius = (table.radius || 50) * Math.min(drawScaleX, drawScaleY);
+            const dx = clickX - tableX;
+            const dy = clickY - tableY;
+            const distance = Math.sqrt(dx*dx + dy*dy);
+            hit = distance <= radius;
+        } else {
+            const width = (table.width || 100) * drawScaleX;
+            const height = (table.height || 80) * drawScaleY;
+            hit = clickX >= tableX - width/2 && clickX <= tableX + width/2 &&
+                  clickY >= tableY - height/2 && clickY <= tableY + height/2;
+        }
+
+        if (hit) {
+            clickedTable = table;
+            break;
+        }
+    }
+
+    if (clickedTable) {
+        const meetsSeats = clickedTable.seats >= peopleFilter;
+        const isFree = clickedTable.status === 'free';
+
+        if (meetsSeats && isFree) {
+            // Wybierz stolik
+            selectedTableId = clickedTable.id;
+            reservationData.tableId = clickedTable.id;
+            reservationData.tableNumber = clickedTable.number;
+
+            // Pokaż info
+            document.getElementById('selectedTableInfo').style.display = 'block';
+            document.getElementById('selectedTableNumber').textContent = clickedTable.number;
+            document.getElementById('selectedTableSeats').textContent = clickedTable.seats;
+
+            // Włącz przycisk dalej
+            const nextBtn = document.getElementById('nextToStep3Btn');
+            nextBtn.disabled = false;
+            nextBtn.style.opacity = '1';
+
+            showToast('success', `Wybrano stolik nr ${clickedTable.number}`);
+        } else if (!meetsSeats) {
+            showToast('warning', `Stolik ${clickedTable.number} ma tylko ${clickedTable.seats} miejsc`);
+        } else if (!isFree) {
+            let statusText = clickedTable.status === 'occupied' ? 'zajęty' :
+                            clickedTable.status === 'reserved' ? 'zarezerwowany' : 'w sprzątaniu';
+            showToast('warning', `Stolik ${clickedTable.number} jest ${statusText}`);
+        }
+    }
+
+    drawTables();
+}
+
+function updatePeopleFilter() {
+    peopleFilter = parseInt(document.getElementById('peopleCount').value);
+    reservationData.people = peopleFilter;
+    document.getElementById('selectedPeople').textContent = peopleFilter;
+
+    // Reset wyboru
+    selectedTableId = null;
+    reservationData.tableId = null;
+    reservationData.tableNumber = null;
+    document.getElementById('selectedTableInfo').style.display = 'none';
+
+    const nextBtn = document.getElementById('nextToStep3Btn');
+    nextBtn.disabled = true;
+    nextBtn.style.opacity = '0.5';
+
+    drawTables();
+
+    // Sprawdź czy jest jakiś wolny stolik
+    const hasAvailable = tablesData.some(t => t.status === 'free' && t.seats >= peopleFilter);
+    document.getElementById('noAvailableTableMsg').style.display = hasAvailable ? 'none' : 'block';
+}
+
+function showToast(type, message) {
+    const toast = document.createElement('div');
+    toast.className = `toast toast-${type}`;
+    toast.innerHTML = `<i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-circle'}"></i> ${message}`;
+    document.body.appendChild(toast);
+
+    // Automatyczne usunięcie po 2.5 sekundy
+    setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transition = 'opacity 0.3s';
+        setTimeout(() => toast.remove(), 300);
+    }, 2500);
+}
 let reservationData = {
     date: '',
     time: '',
@@ -264,14 +528,17 @@ function selectTime(time) {
 }
 
 function goToStep2() {
-    // Validate step 1
     reservationData.date = document.getElementById('reservationDate').value;
     reservationData.people = parseInt(document.getElementById('peopleCount').value);
+    reservationData.time = document.querySelector('.time-slot.selected')?.textContent;
 
     if (!reservationData.time) {
         alert('Proszę wybrać godzinę');
         return;
     }
+
+    // Aktualizuj filtr osób
+    peopleFilter = reservationData.people;
 
     // Update UI
     document.getElementById('step1').classList.remove('active');
@@ -279,13 +546,15 @@ function goToStep2() {
     document.getElementById('step1Content').style.display = 'none';
     document.getElementById('step2Content').style.display = 'block';
 
-    // Update selected info
     document.getElementById('selectedDateTime').textContent =
         `${reservationData.date} ${reservationData.time}`;
     document.getElementById('selectedPeople').textContent = reservationData.people;
 
-    // Filter tables by number of people
-    filterTables();
+    // Inicjalizuj canvas
+    setTimeout(() => {
+        initCanvas();
+        updatePeopleFilter();
+    }, 100);
 }
 
 function filterTables() {
@@ -348,6 +617,11 @@ function backToStep2() {
 }
 
 async function submitReservation() {
+    if (!reservationData.tableId) {
+        alert('Proszę wybrać stolik');
+        return;
+    }
+
     const notes = document.getElementById('reservationNotes').value;
 
     try {
@@ -365,14 +639,17 @@ async function submitReservation() {
         const data = await response.json();
 
         if (data.success) {
-            // Show success modal
-            showSuccessModal(data.message);
+            showToast('success', 'Rezerwacja wykonana! Za chwilę wrócisz do panelu.');
+            // Po 2 sekundach przekieruj na dashboard klienta
+            setTimeout(() => {
+                window.location.href = "{{ url_for('client_dashboard') }}";
+            }, 2000);
         } else {
-            alert('Błąd: ' + data.message);
+            showToast('error', 'Błąd: ' + data.message);
         }
     } catch (error) {
         console.error('Error:', error);
-        alert('Wystąpił błąd podczas rezerwacji');
+        showToast('error', 'Wystąpił błąd podczas rezerwacji');
     }
 }
 
