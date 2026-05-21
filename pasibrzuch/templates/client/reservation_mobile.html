@@ -79,18 +79,17 @@
 
 /* ========== NOWE STYLE DLA CANVAS ========== */
 .canvas-container {
-    background: #f8f9fa;
-    border-radius: 12px;
-    padding: 8px;
+    background: #f6f5f5 !important;  /* jaśniejszy szary */
+    border-radius: 16px;
+    padding: 12px;
     margin-bottom: 16px;
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
+    border: 3px solid var(--primary-orange) !important;  /* grubsza pomarańczowa ramka */
 }
 
 #floorCanvas {
-    background: #ffffff;
     border-radius: 8px;
-    border: 1px solid #eee;
     display: block;
     margin: 0 auto;
     cursor: pointer;
@@ -124,10 +123,10 @@
 }
 
 .selected-table-info {
-    background: rgba(255,107,53,0.1);
-    border-radius: 8px;
-    padding: 12px;
-    margin-top: 12px;
+    background: #f8f9fa !important;
+    border-radius: 12px;
+    padding: 16px;
+    margin-top: 16px;
     text-align: center;
 }
 
@@ -140,6 +139,103 @@
     padding: 20px;
     color: #999;
 }
+
+/* Pomarańczowe akcenty dla formularzy */
+.form-control:focus, select:focus {
+    border-color: var(--primary-orange) !important;
+    box-shadow: 0 0 0 2px rgba(255,107,53,0.2) !important;
+}
+
+/* Pomarańczowa ramka dla wybranego time-slota (już jest, ale upewniamy się) */
+.time-slot.selected {
+    background: var(--primary-orange);
+    color: white;
+    border-color: var(--primary-orange);
+    box-shadow: 0 2px 8px rgba(255,107,53,0.3);
+}
+
+/* Jednokolorowy zielony dla przycisków akcji */
+.btn-mobile.btn-primary {
+    background: #20b27f !important;
+    border-radius: 12px !important;
+    box-shadow: 0 4px 12px rgba(32,178,170,0.3) !important;
+    transition: transform 0.2s;
+}
+
+.btn-mobile.btn-primary:active {
+    transform: scale(0.98);
+}
+
+.btn-mobile.btn-success {
+    background: #20b27f !important;
+    border-radius: 12px !important;
+    box-shadow: 0 4px 12px rgba(32,178,170,0.3) !important;
+}
+
+/* Pomarańczowe obramowanie pól formularza */
+.form-control, select.form-control {
+    border: 2px solid #e0e0e0;
+    transition: all 0.3s;
+}
+
+.form-control:focus, select.form-control:focus {
+    border-color: var(--primary-orange) !important;
+    box-shadow: 0 0 0 3px rgba(255,107,53,0.2) !important;
+}
+
+/* Stałe pomarańczowe obramowanie (nie tylko przy focus) */
+.datetime-picker .form-control,
+#peopleCount {
+    border: 2px solid var(--primary-orange);
+}
+
+/* Godziny - czarny tekst, pomarańczowa ramka */
+.time-slot {
+    border: 2px solid var(--primary-orange);
+    background: white;
+    color: #333 !important;
+    font-weight: 500;
+}
+
+.time-slot.selected {
+    background: var(--primary-orange);
+    color: white !important;
+    border-color: var(--primary-orange);
+}
+
+/* Przycisk Wróć - pomarańczowa obwódka, biały środek, czarny napis */
+.btn-mobile.btn-secondary {
+    background: white !important;
+    color: #333 !important;
+    border: 3px solid var(--primary-orange) !important;
+    box-shadow: none !important;
+    border-radius: 12px !important;
+}
+
+.btn-mobile.btn-secondary:active {
+    transform: scale(0.98);
+    background: #f5f5f5 !important;
+}
+
+/* Zielone kropki dla ukończonych kroków */
+.step.completed .step-number {
+    background: #20b27f !important;
+    color: white !important;
+}
+
+.step.active .step-number {
+    background: var(--primary-orange) !important;
+}
+
+.mobile-card {
+    border: 10px solid var(--primary-orange) !important;
+    border-radius: 30px !important;
+    padding: 20px !important;
+    margin-top: 20px !important; /* dodaj odstęp od góry */
+    margin-bottom: 16px !important;
+    background: white !important;
+}
+
 </style>
 {% endblock %}
 
@@ -163,45 +259,65 @@
 
     <!-- Step 1: Date & Time -->
     <div id="step1Content" class="mobile-card">
-        <h3 style="margin-bottom: 16px;">Wybierz datę i godzinę</h3>
+
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding-bottom: 12px; border-bottom: 2px solid var(--primary-orange);">
+    <div>
+        <h2 style="margin: 0; color: var(--dark);">{{ restaurant.name }}</h2>
+        <div style="font-size: 14px; color: var(--gray); margin-top: 4px;">
+            <i class="fas fa-map-marker-alt" style="color: #20b27f; margin-right: 6px;"></i> {{ restaurant.address }}
+        </div>
+    </div>
+    <div style="text-align: right;">
+        <div style="font-size: 20px; font-weight: 700; color: var(--primary-orange);">
+            <i class="fas fa-star" style="color: #FFD700;"></i> {{ restaurant.rating }}
+        </div>
+        <div style="font-size: 12px; color: var(--gray);">ocena</div>
+    </div>
+</div>
+        <h3 style="margin-bottom: 16px;">Zaplanuj wizytę</h3>
 
         <div class="datetime-picker">
-            <div class="form-group">
-                <label class="form-label">Data</label>
-                <input type="date"
-                       class="form-control"
-                       id="reservationDate"
-                       min="{{ now.strftime('%Y-%m-%d') }}"
-                       value="{{ now.strftime('%Y-%m-%d') }}">
-            </div>
+    <div class="form-group">
+        <label class="form-label">
+            <i class="fas fa-calendar-alt" style="color: var(--primary-orange); margin-right: 6px;"></i>
+            Data
+        </label>
+        <input type="date" class="form-control" id="reservationDate" min="{{ now.strftime('%Y-%m-%d') }}" value="{{ now.strftime('%Y-%m-%d') }}">
+    </div>
 
-            <div class="form-group">
-                <label class="form-label">Liczba osób</label>
-                <select class="form-control" id="peopleCount">
-                    <option value="1">1 osoba</option>
-                    <option value="2" selected>2 osoby</option>
-                    <option value="3">3 osoby</option>
-                    <option value="4">4 osoby</option>
-                    <option value="5">5 osób</option>
-                    <option value="6">6 osób</option>
-                </select>
-            </div>
-        </div>
+    <div class="form-group">
+        <label class="form-label">
+            <i class="fas fa-users" style="color: var(--primary-orange); margin-right: 6px;"></i>
+            Liczba osób
+        </label>
+        <select class="form-control" id="peopleCount">
+            <option value="1">1 osoba</option>
+            <option value="2" selected>2 osoby</option>
+            <option value="3">3 osoby</option>
+            <option value="4">4 osoby</option>
+            <option value="5">5 osób</option>
+            <option value="6">6 osób</option>
+        </select>
+    </div>
+</div>
 
-        <div class="form-group">
-            <label class="form-label">Godzina</label>
-            <div class="time-slots">
-                <button class="time-slot" onclick="selectTime('17:00')">17:00</button>
-                <button class="time-slot" onclick="selectTime('17:30')">17:30</button>
-                <button class="time-slot" onclick="selectTime('18:00')">18:00</button>
-                <button class="time-slot" onclick="selectTime('18:30')">18:30</button>
-                <button class="time-slot" onclick="selectTime('19:00')">19:00</button>
-                <button class="time-slot" onclick="selectTime('19:30')">19:30</button>
-                <button class="time-slot" onclick="selectTime('20:00')">20:00</button>
-                <button class="time-slot" onclick="selectTime('20:30')">20:30</button>
-                <button class="time-slot" onclick="selectTime('21:00')">21:00</button>
-            </div>
-        </div>
+<div class="form-group">
+    <label class="form-label">
+        <i class="fas fa-clock" style="color: var(--primary-orange); margin-right: 6px;"></i>
+        Godzina
+    </label>
+    <div class="time-slots">
+        <button class="time-slot" onclick="selectTime('17:00')">17:00</button>
+        <button class="time-slot" onclick="selectTime('17:30')">17:30</button>
+        <button class="time-slot" onclick="selectTime('18:00')">18:00</button>
+        <button class="time-slot" onclick="selectTime('18:30')">18:30</button>
+        <button class="time-slot" onclick="selectTime('19:00')">19:00</button>
+        <button class="time-slot" onclick="selectTime('19:30')">19:30</button>
+        <button class="time-slot" onclick="selectTime('20:00')">20:00</button>
+        <button class="time-slot" onclick="selectTime('20:30')">20:30</button>
+        <button class="time-slot" onclick="selectTime('21:00')">21:00</button>
+    </div>
+</div>
 
         <button class="btn-mobile btn-primary" onclick="goToStep2()">
             Dalej: Wybór stolika
@@ -328,8 +444,8 @@ function drawTables() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
     // Tło
-    ctx.fillStyle = '#ffffff';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
+     ctx.fillStyle = '#f6f5f5';
+     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
     // Skalowanie - dopasowanie do canvas
     const scaleX = canvas.width / 800;
@@ -690,5 +806,57 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('reservationDate').value = today;
     reservationData.date = today;
 });
+
+// Funkcja do aktualizacji kolorów kroków
+function updateStepColors() {
+    // Krok 1 – zielony jeśli przeszedłeś do kroku 2 lub 3
+    if (document.getElementById('step2').classList.contains('active') ||
+        document.getElementById('step3').classList.contains('active')) {
+        document.getElementById('step1').classList.add('completed');
+    } else {
+        document.getElementById('step1').classList.remove('completed');
+    }
+
+    // Krok 2 – zielony jeśli jesteś w kroku 3
+    if (document.getElementById('step3').classList.contains('active')) {
+        document.getElementById('step2').classList.add('completed');
+    } else {
+        document.getElementById('step2').classList.remove('completed');
+    }
+}
+
+// Nadpisz istniejące funkcje przejścia
+const originalGoToStep2 = goToStep2;
+const originalGoToStep3 = goToStep3;
+const originalBackToStep1 = backToStep1;
+const originalBackToStep2 = backToStep2;
+
+goToStep2 = function() {
+    originalGoToStep2();
+    updateStepColors();
+}
+
+goToStep3 = function() {
+    originalGoToStep3();
+    updateStepColors();
+}
+
+backToStep1 = function() {
+    originalBackToStep1();
+    updateStepColors();
+}
+
+backToStep2 = function() {
+    originalBackToStep2();
+    updateStepColors();
+}
+
+// Po udanej rezerwacji – krok 3 na zielony
+const originalSubmitReservation = submitReservation;
+submitReservation = async function() {
+    await originalSubmitReservation();
+    // Jeśli rezerwacja się udała (toast sukcesu) – krok 3 zielony
+    document.getElementById('step3').classList.add('completed');
+}
 </script>
 {% endblock %}
