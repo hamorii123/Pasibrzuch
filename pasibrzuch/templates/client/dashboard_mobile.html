@@ -64,6 +64,57 @@
     grid-template-columns: repeat(2, 1fr);
     gap: 12px;
 }
+
+/* Poprawa wyglądu polecanych restauracji w dashboardzie */
+.restaurant-card {
+    background: white;
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    text-decoration: none;
+    display: block;
+}
+
+.restaurant-image {
+    background: linear-gradient(135deg, #FF6B35, #E55A2B);
+    height: 100px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+}
+
+.restaurant-badge {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    background: white;
+    color: #333 !important;
+    padding: 4px 8px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.restaurant-badge i {
+    color: #FFD700 !important;
+}
+
+.restaurant-name {
+    padding: 12px 12px 4px;
+    font-size: 16px;
+    font-weight: 600;
+    color: #333;
+}
+
+.restaurant-info {
+    padding: 0 12px 12px;
+    font-size: 13px;
+    color: #666;
+}
 </style>
 {% endblock %}
 

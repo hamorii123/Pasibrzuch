@@ -11,25 +11,85 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <style>
+/* Nadpisanie domyślnych stylów headera */
+.header {
+    background: linear-gradient(135deg, #FF6B35, #E55A2B) !important;
+    height: 100px !important;
+    padding: 0 20px !important;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1) !important;
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    z-index: 1000 !important;
+}
+
+.header-title {
+    display: flex;
+    align-items: center;
+}
+
+.header-btn {
+    color: white !important;
+    font-size: 26px !important;
+}
+
+.header-btn:active {
+    background: rgba(255,255,255,0.2) !important;
+    border-radius: 50%;
+}
+
+/* DOSTOSOWANIE MAIN - ważne żeby treść nie nachodziła na header */
+.main {
+    padding-top: 120px !important;
+}
+
+/* Bottom navigation pozostaje bez zmian */
+.bottom-nav {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+}
+
+/* Dolny pasek nawigacji - pomarańczowy, białe ikony i napisy */
+.bottom-nav {
+    background: linear-gradient(135deg, #FF6B35, #E55A2B) !important;
+    border-top: none !important;
+}
+
+.bottom-nav-item {
+    color: rgba(255, 255, 255, 0.7) !important;
+}
+
+.bottom-nav-item.active {
+    color: white !important;
+}
+
+.bottom-nav-icon, .bottom-nav-label {
+    color: inherit !important;
+}
         {% block extra_css %}{% endblock %}
     </style>
 </head>
 <body>
-    <!-- Header -->
-    <header class="header safe-area-top">
-        <div class="header-title">
+<!-- Header - grubszy, z większym logiem -->
+<header class="header safe-area-top" style="background: linear-gradient(135deg, #FF6B35, #E55A2B); height: 120px; padding: 0 20px;">
+    <div class="header-title">
+        <div style="background: white; border-radius: 50%; width: 85px; height: 85px; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 8px rgba(0,0,0,0.15);">
             <img src="{{ url_for('static', filename='images/logo.png') }}" alt="ResNow" style="height: 80px;">
         </div>
-        <div class="header-actions">
-            <button class="header-btn" onclick="toggleNotifications()">
-                <i class="fas fa-bell"></i>
-                <span class="badge" id="notificationBadge" style="display: none;">3</span>
-            </button>
-            <a href="{{ url_for('client_profile') }}" class="header-btn">
-                <i class="fas fa-user"></i>
-            </a>
-        </div>
-    </header>
+    </div>
+    <div class="header-actions" style="gap: 20px;">
+        <button class="header-btn" onclick="toggleNotifications()" style="color: white; font-size: 26px;">
+            <i class="fas fa-bell"></i>
+            <span class="badge" id="notificationBadge" style="display: none;">3</span>
+        </button>
+        <a href="{{ url_for('client_profile') }}" class="header-btn" style="color: white; font-size: 26px;">
+            <i class="fas fa-user"></i>
+        </a>
+    </div>
+</header>
 
     <!-- Main Content -->
     <main class="main safe-area-bottom">
