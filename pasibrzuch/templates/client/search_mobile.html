@@ -5,32 +5,36 @@
 {% block extra_css %}
 <style>
 .search-container {
-    padding: 16px;
+    position: sticky;
+    top: 60px;
+    background: transparent;
+    padding: 0 0 16px 0;
+    z-index: 10;
 }
 
-.recent-searches {
-    margin-top: 20px;
+.search-container .form-control {
+    background: #f0f0f0;
+    border: none;
+    color: #333;
 }
 
-.search-item {
-    padding: 12px 0;
-    border-bottom: 1px solid #eee;
+.search-container .form-control::placeholder {
+    color: #999;
+}
+
+.search-container .form-control:focus {
+    background: #f0f0f0;
+    outline: none;
+    box-shadow: none;
+}
+
+.filters {
     display: flex;
-    align-items: center;
-    gap: 12px;
-    text-decoration: none;
-    color: inherit;
-}
-
-.search-item-icon {
-    width: 40px;
-    height: 40px;
-    background: #f8f9fa;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: #FF6B35;
+    gap: 8px;
+    overflow-x: auto;
+    padding: 8px 0;
+    margin-bottom: 16px;
+    -webkit-overflow-scrolling: touch;
 }
 
 .filter-btn {
@@ -38,59 +42,132 @@
     border: 1px solid #ddd;
     border-radius: 20px;
     background: white;
+    white-space: nowrap;
     font-size: 14px;
-    margin-right: 8px;
-    margin-bottom: 8px;
 }
 
 .filter-btn.active {
-    background: #FF6B35;
+    background: var(--primary-orange);
     color: white;
-    border-color: #FF6B35;
+    border-color: var(--primary-orange);
+}
+
+.restaurant-card {
+    display: block;
+    text-decoration: none;
+    color: inherit;
+    margin-bottom: 16px;
+    background: white;
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+
+.restaurant-image {
+    width: 100%;
+    height: 140px;
+    background: linear-gradient(135deg, #FF6B35, #FF8C42);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 40px;
+}
+
+.restaurant-card h3 {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 600;
+    color: #333;
+}
+
+/* Tagi / badge dla restauracji */
+.restaurant-tag {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 500;
+    margin-right: 6px;
+    margin-bottom: 6px;
+}
+
+.tag-cuisine {
+    background: rgba(255,107,53,0.12);
+    color: #E55A2B;
+}
+
+.tag-hours {
+    background: rgba(128,128,128,0.12);
+    color: #555;
+}
+
+.tag-reservation {
+    background: rgba(0,123,255,0.12);
+    color: #007bff;
+}
+
+.restaurant-tags {
+    display: flex;
+    flex-wrap: wrap;
+    margin-top: 8px;
 }
 
 .empty-state {
     text-align: center;
-    padding: 40px 20px;
-    color: #666;
+    padding: 60px 20px;
+    color: #999;
+}
+
+body {
+    background-color: white !important;
 }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="search-container">
-    <!-- Wyszukiwarka -->
-    <div class="form-group" style="margin-bottom: 20px;">
-        <form action="{{ url_for('client_search') }}" method="get">
-            <div style="position: relative;">
-                <input type="text"
-                       name="q"
-                       class="form-control"
-                       placeholder="🔍 Szukaj restauracji, dań..."
-                       value="{{ query }}"
-                       style="padding-left: 40px;">
-                <div style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%);">
-                    <i class="fas fa-search"></i>
-                </div>
-                <button type="submit"
-                        style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); background: none; border: none; color: #FF6B35; font-weight: 600;">
-                    Szukaj
-                </button>
-            </div>
-        </form>
+<div class="mobile-container">
+    <!-- Nagłówek wyśrodkowany -->
+    <div style="margin-bottom: 20px; text-align: center;">
+        <h1 style="font-size: 24px; font-weight: 700; margin: 0 0 8px 0; color: var(--dark);">Szukaj</h1>
+        <div style="display: flex; align-items: center; justify-content: center; gap: 8px; color: var(--gray); font-size: 14px;">
+            <i class="fas fa-map-marker-alt" style="color: #20b27f; font-size: 14px;"></i>
+            <span>Szczecin - Centrum</span>
+        </div>
     </div>
 
-    <!-- Filtry -->
-    <div style="margin-bottom: 20px;">
-        <h4 style="margin-bottom: 12px; color: #333;">Filtry</h4>
-        <div style="display: flex; flex-wrap: wrap;">
-            <button class="filter-btn active">Wszystkie</button>
-            <button class="filter-btn">Dostawa</button>
-            <button class="filter-btn">Rezerwacja</button>
-            <button class="filter-btn">Otwarte teraz</button>
-            <button class="filter-btn">Polska</button>
-            <button class="filter-btn">Włoska</button>
+    <!-- Wyszukiwarka -->
+    <div class="search-container">
+        <div class="form-group" style="margin-bottom: 0;">
+            <form action="{{ url_for('client_search') }}" method="get" style="margin: 0;">
+                <div style="position: relative;">
+                    <input type="text"
+                           name="q"
+                           class="form-control"
+                           placeholder="🔍 Szukaj restauracji, dań..."
+                           value="{{ query }}"
+                           style="padding-left: 40px;">
+                    <div style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%);">
+                        <i class="fas fa-search" style="color: #999;"></i>
+                    </div>
+                    <button type="submit"
+                            style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); background: none; border: none; color: #FF6B35; font-weight: 600;">
+                        Szukaj
+                    </button>
+                </div>
+            </form>
         </div>
+    </div>
+
+    <!-- Filtry (poziome przewijanie) -->
+    <div class="filters">
+        <button class="filter-btn active">Wszystkie</button>
+        <button class="filter-btn">Rezerwacja</button>
+        <button class="filter-btn">Polska</button>
+        <button class="filter-btn">Włoska</button>
+        <button class="filter-btn">Japońska</button>
+        <button class="filter-btn">Szybkie</button>
+        <button class="filter-btn">Wege</button>
     </div>
 
     <!-- Wyniki wyszukiwania -->
@@ -100,51 +177,62 @@
 
         {% if restaurants %}
             {% for restaurant in restaurants %}
-            <a href="{{ url_for('client_menu', restaurant_id=restaurant.id) }}"
-               class="search-item">
-                <div class="search-item-icon">
+            <a href="{{ url_for('client_menu', restaurant_id=restaurant.id) }}" class="restaurant-card">
+                <div class="restaurant-image">
                     <i class="fas fa-utensils"></i>
                 </div>
-                <div style="flex: 1;">
-                    <div style="font-weight: 600; margin-bottom: 4px;">{{ restaurant.name }}</div>
-                    <div style="color: #666; font-size: 14px;">
-                        {{ restaurant.cuisine }} • {{ restaurant.address }}
+                <div style="padding: 12px;">
+                    <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 8px;">
+                        <h3>{{ restaurant.name }}</h3>
+                        <div style="color: #FF6B35; font-weight: 700;">
+                            <i class="fas fa-star"></i> {{ restaurant.rating }}
+                        </div>
                     </div>
-                </div>
-                <div style="color: #FF6B35; font-weight: 700;">
-                    <i class="fas fa-star"></i> {{ restaurant.rating }}
+                    <div class="restaurant-tags">
+                        <span class="restaurant-tag tag-cuisine">
+                            <i class="fas fa-utensil-spoon" style="margin-right: 4px; font-size: 10px;"></i> {{ restaurant.cuisine }}
+                        </span>
+                        <span class="restaurant-tag tag-hours">
+                            <i class="fas fa-clock" style="margin-right: 4px; font-size: 10px;"></i> {{ restaurant.opening_hours }}
+                        </span>
+                        {% if restaurant.reservation %}
+                        <span class="restaurant-tag tag-reservation">
+                            <i class="fas fa-calendar-check" style="margin-right: 4px; font-size: 10px;"></i> Rezerwacja
+                        </span>
+                        {% endif %}
+                    </div>
                 </div>
             </a>
             {% endfor %}
         {% else %}
             <div class="empty-state">
-                <i class="fas fa-search fa-2x" style="color: #ddd; margin-bottom: 16px;"></i>
+                <i class="fas fa-search fa-3x" style="color: #ddd; margin-bottom: 16px;"></i>
                 <p>Brak wyników dla "{{ query }}"</p>
             </div>
         {% endif %}
     </div>
     {% else %}
     <!-- Ostatnie wyszukiwania -->
-    <div class="recent-searches">
-        <h4 style="margin-bottom: 12px; color: #333;">Ostatnie wyszukiwania</h4>
-        <div class="search-item">
-            <div class="search-item-icon">
-                <i class="fas fa-history"></i>
+    <div>
+        <h4 style="margin-bottom: 16px; color: #333;">Ostatnie wyszukiwania</h4>
+        <a href="{{ url_for('client_search') }}?q=Pizza" class="restaurant-card" style="display: flex; align-items: center; gap: 12px; padding: 12px;">
+            <div style="width: 40px; height: 40px; background: #f0f0f0; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                <i class="fas fa-history" style="color: #FF6B35;"></i>
             </div>
-            <div style="color: #666;">Pizza</div>
-        </div>
-        <div class="search-item">
-            <div class="search-item-icon">
-                <i class="fas fa-history"></i>
+            <div style="font-weight: 500; color: #333;">Pizza</div>
+        </a>
+        <a href="{{ url_for('client_search') }}?q=Sushi" class="restaurant-card" style="display: flex; align-items: center; gap: 12px; padding: 12px;">
+            <div style="width: 40px; height: 40px; background: #f0f0f0; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                <i class="fas fa-history" style="color: #FF6B35;"></i>
             </div>
-            <div style="color: #666;">Sushi</div>
-        </div>
-        <div class="search-item">
-            <div class="search-item-icon">
-                <i class="fas fa-history"></i>
+            <div style="font-weight: 500; color: #333;">Sushi</div>
+        </a>
+        <a href="{{ url_for('client_search') }}?q=Burger" class="restaurant-card" style="display: flex; align-items: center; gap: 12px; padding: 12px;">
+            <div style="width: 40px; height: 40px; background: #f0f0f0; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                <i class="fas fa-history" style="color: #FF6B35;"></i>
             </div>
-            <div style="color: #666;">Burger</div>
-        </div>
+            <div style="font-weight: 500; color: #333;">Burger</div>
+        </a>
     </div>
     {% endif %}
 </div>
