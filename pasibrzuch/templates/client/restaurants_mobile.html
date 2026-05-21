@@ -6,9 +6,25 @@
 .search-container {
     position: sticky;
     top: 60px;
-    background: var(--light-gray);
-    padding: 16px;
+    background: transparent;
+    padding: 0 0 16px 0;
     z-index: 10;
+}
+
+.search-container .form-control {
+    background: #f0f0f0;
+    border: none;
+    color: #333;
+}
+
+.search-container .form-control::placeholder {
+    color: #999;
+}
+
+.search-container .form-control:focus {
+    background: #f0f0f0;
+    outline: none;
+    box-shadow: none;
 }
 
 .filters {
@@ -65,10 +81,56 @@
     font-weight: 600;
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
+
+body {
+    background-color: white !important;
+}
+
+/* Tagi / badge dla restauracji */
+.restaurant-tag {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 500;
+    margin-right: 6px;
+    margin-bottom: 6px;
+}
+
+.tag-cuisine {
+    background: rgba(255,107,53,0.12);
+    color: #E55A2B;
+}
+
+.tag-hours {
+    background: rgba(128,128,128,0.12);
+    color: #555;
+}
+
+.tag-reservation {
+    background: rgba(0,123,255,0.12);
+    color: #007bff;
+}
+
+/* Kontener na tagi */
+.restaurant-tags {
+    display: flex;
+    flex-wrap: wrap;
+    margin-top: 8px;
+}
 {% endblock %}
 
 {% block content %}
 <div class="mobile-container">
+<!-- Nagłówek wyśrodkowany -->
+<div style="margin-bottom: 20px; text-align: center;">
+    <h1 style="font-size: 24px; font-weight: 700; margin: 0 0 8px 0; color: var(--dark);">Restauracje</h1>
+    <div style="display: flex; align-items: center; justify-content: center; gap: 8px; color: var(--gray); font-size: 14px;">
+        <i class="fas fa-map-marker-alt" style="color: #20b27f; font-size: 14px;"></i>
+        <span>Szczecin - Centrum</span>
+    </div>
+</div>
+
     <!-- Search Bar -->
     <div class="search-container">
         <div class="form-group" style="margin-bottom: 0;">
@@ -108,28 +170,19 @@
                         <i class="fas fa-star"></i> {{ restaurant.rating }}
                     </div>
                 </div>
-
-                <div style="color: var(--gray); font-size: 14px; margin-bottom: 8px;">
-                    <i class="fas fa-utensil-spoon"></i> {{ restaurant.cuisine }}
-                </div>
-
-                <div style="color: var(--gray); font-size: 14px; margin-bottom: 12px;">
-                    <i class="fas fa-clock"></i> {{ restaurant.opening_hours }}
-                </div>
-
-                <div style="display: flex; gap: 8px;">
-                    {% if restaurant.reservation %}
-                    <span style="background: rgba(0,123,255,0.1); color: #007bff; padding: 4px 12px; border-radius: 12px; font-size: 12px;">
-                        Rezerwacja
-                    </span>
-                    {% endif %}
-
-                    {% if restaurant.delivery %}
-                    <span style="background: rgba(40,167,69,0.1); color: #28a745; padding: 4px 12px; border-radius: 12px; font-size: 12px;">
-                        {{ restaurant.delivery_time }}
-                    </span>
-                    {% endif %}
-                </div>
+                <div class="restaurant-tags">
+    <span class="restaurant-tag tag-cuisine">
+        <i class="fas fa-utensil-spoon" style="margin-right: 4px; font-size: 10px;"></i> {{ restaurant.cuisine }}
+    </span>
+    <span class="restaurant-tag tag-hours">
+        <i class="fas fa-clock" style="margin-right: 4px; font-size: 10px;"></i> {{ restaurant.opening_hours }}
+    </span>
+    {% if restaurant.reservation %}
+    <span class="restaurant-tag tag-reservation">
+        <i class="fas fa-calendar-check" style="margin-right: 4px; font-size: 10px;"></i> Rezerwacja
+    </span>
+    {% endif %}
+</div>
             </div>
         </a>
         {% endfor %}
