@@ -10,6 +10,9 @@
     grid-template-columns: repeat(3, 1fr);
     gap: 12px;
     margin-bottom: 20px;
+    max-width: 480px;
+    margin-left: auto;
+    margin-right: auto;
 }
 
 .stat-card {
@@ -37,6 +40,9 @@
     grid-template-columns: 1fr 1fr;
     gap: 12px;
     margin: 20px 0;
+    max-width: 480px;
+    margin-left: auto;
+    margin-right: auto;
 }
 
 .user-welcome {
@@ -49,12 +55,12 @@
 .user-avatar {
     width: 60px;
     height: 60px;
-    background: var(--primary-light);
+    background: rgba(255, 107, 53, 0.1);  /* jasne pomarańczowe tło */
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
-    color: var(--primary);
+    color: #FF6B35;  /* pomarańczowy kolor ikony */
     font-size: 24px;
 }
 
@@ -63,6 +69,9 @@
     display: grid;
     grid-template-columns: repeat(2, 1fr);
     gap: 12px;
+    max-width: 480px;
+    margin-left: auto;
+    margin-right: auto;
 }
 
 /* Poprawa wyglądu polecanych restauracji w dashboardzie */
@@ -120,6 +129,7 @@
 
 {% block content %}
 <!-- Welcome Card -->
+<div class="dashboard-container" style="max-width: 480px; margin: 0 auto; padding: 0 16px;">
 <div class="card">
     <div class="user-welcome">
         <div class="user-avatar">
@@ -127,7 +137,7 @@
         </div>
         <div>
             <h2 style="margin-bottom: 4px;">Witaj, {{ session.user_name }}! 👋</h2>
-            <p style="color: var(--text-light);">Co chcesz dzisiaj zrobić?</p>
+            <p style="color: var(--text-light);">Gdzie dzisiaj coś zjemy?</p>
         </div>
     </div>
 
@@ -217,5 +227,6 @@
         </a>
         {% endfor %}
     </div>
+</div>
 </div>
 {% endblock %}
