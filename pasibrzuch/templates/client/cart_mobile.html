@@ -362,7 +362,7 @@
                 <span class="total-amount">{{ "%.2f"|format(total) }} zł</span>
             </div>
 
-            <button class="checkout-btn" onclick="proceedToCheckout()">
+            <button class="checkout-btn">
                 <i class="fas fa-credit-card"></i>
                 Przejdź do płatności
             </button>
@@ -484,17 +484,6 @@ function updateCartBadge() {
             badge.style.display = 'none';
         }
     }
-}
-
-function proceedToCheckout() {
-    if (cartItems.length === 0) {
-        alert('Twój koszyk jest pusty');
-        return;
-    }
-
-    // Przekieruj do strony zamówienia
-    const restaurantId = {{ restaurant_id|default(1) }};
-    window.location.href = `/client/order/${restaurantId}`;
 }
 
 function escapeHtml(text) {
