@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ResNow - {% block title %}Klient{% endblock %}</title>
+    <title>P@SIBRZUCH - {% block title %}Klient{% endblock %}</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/mobile.css') }}">
     <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
@@ -18,8 +18,7 @@
     <!-- Header -->
     <header class="header safe-area-top">
         <div class="header-title">
-            <i class="fas fa-utensils"></i>
-            ResNow
+            <img src="{{ url_for('static', filename='images/logo.png') }}" alt="ResNow" style="height: 80px;">
         </div>
         <div class="header-actions">
             <button class="header-btn" onclick="toggleNotifications()">

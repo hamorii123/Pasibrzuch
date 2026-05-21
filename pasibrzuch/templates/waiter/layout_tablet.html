@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-    <title>ResNow - Panel Kelnera • {% block title %}{% endblock %}</title>
+    <title>P@SIBRZUCH - Panel Kelnera • {% block title %}{% endblock %}</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/tablet.css') }}">
     <style>
@@ -15,8 +15,9 @@
     <aside class="tablet-sidebar">
         <div class="sidebar-header">
             <div class="restaurant-logo">
-                <i class="fas fa-utensils"></i>
-                <span>ResNow</span>
+                <div style="background: white; border-radius: 50%; width: 100px; height: 100px; display: flex; align-items: center; justify-content: center; margin: 0 auto;">
+                    <img src="{{ url_for('static', filename='images/logo.png') }}" alt="ResNow" style="height: 100px;">
+                </div>
             </div>
             <div class="user-info">
                 <div class="user-avatar">
