@@ -77,15 +77,15 @@
     border-color: var(--primary-orange);
 }
 
-/* ========== NOWE STYLE DLA CANVAS ========== */
+/* Canvas - minimalistyczne tło (bez pomarańczowej ramki) */
 .canvas-container {
-    background: #f6f5f5 !important;  /* jaśniejszy szary */
+    background: #f6f5f5;
     border-radius: 16px;
     padding: 12px;
     margin-bottom: 16px;
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
-    border: 3px solid var(--primary-orange) !important;  /* grubsza pomarańczowa ramka */
+    /* USUNIĘTA border: 3px solid var(--primary-orange) */
 }
 
 #floorCanvas {
@@ -140,13 +140,12 @@
     color: #999;
 }
 
-/* Pomarańczowe akcenty dla formularzy */
+/* Formularze */
 .form-control:focus, select:focus {
     border-color: var(--primary-orange) !important;
     box-shadow: 0 0 0 2px rgba(255,107,53,0.2) !important;
 }
 
-/* Pomarańczowa ramka dla wybranego time-slota (już jest, ale upewniamy się) */
 .time-slot.selected {
     background: var(--primary-orange);
     color: white;
@@ -154,7 +153,7 @@
     box-shadow: 0 2px 8px rgba(255,107,53,0.3);
 }
 
-/* Jednokolorowy zielony dla przycisków akcji */
+/* Przyciski */
 .btn-mobile.btn-primary {
     background: #20b27f !important;
     border-radius: 12px !important;
@@ -172,7 +171,6 @@
     box-shadow: 0 4px 12px rgba(32,178,170,0.3) !important;
 }
 
-/* Pomarańczowe obramowanie pól formularza */
 .form-control, select.form-control {
     border: 2px solid #e0e0e0;
     transition: all 0.3s;
@@ -183,15 +181,9 @@
     box-shadow: 0 0 0 3px rgba(255,107,53,0.2) !important;
 }
 
-/* Stałe pomarańczowe obramowanie (nie tylko przy focus) */
-.datetime-picker .form-control,
-#peopleCount {
-    border: 2px solid var(--primary-orange);
-}
-
-/* Godziny - czarny tekst, pomarańczowa ramka */
+/* Godziny */
 .time-slot {
-    border: 2px solid var(--primary-orange);
+    border: 2px solid #e0e0e0;  /* zmienione z pomarańczowego na szary */
     background: white;
     color: #333 !important;
     font-weight: 500;
@@ -203,11 +195,11 @@
     border-color: var(--primary-orange);
 }
 
-/* Przycisk Wróć - pomarańczowa obwódka, biały środek, czarny napis */
+/* Przycisk Wróć */
 .btn-mobile.btn-secondary {
     background: white !important;
     color: #333 !important;
-    border: 3px solid var(--primary-orange) !important;
+    border: 2px solid #ddd !important;  /* zmienione z pomarańczowego na szary */
     box-shadow: none !important;
     border-radius: 12px !important;
 }
@@ -217,7 +209,7 @@
     background: #f5f5f5 !important;
 }
 
-/* Zielone kropki dla ukończonych kroków */
+/* Kroki */
 .step.completed .step-number {
     background: #20b27f !important;
     color: white !important;
@@ -227,15 +219,66 @@
     background: var(--primary-orange) !important;
 }
 
+/* Karty - minimalistyczne białe tło (bez pomarańczowej ramki) */
 .mobile-card {
-    border: 10px solid var(--primary-orange) !important;
-    border-radius: 30px !important;
+    border: none !important;  /* USUNIĘTA pomarańczowa ramka */
+    border-radius: 20px !important;
     padding: 20px !important;
-    margin-top: 20px !important; /* dodaj odstęp od góry */
+    margin-top: 20px !important;
     margin-bottom: 16px !important;
     background: white !important;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08) !important;  /* delikatny cień zamiast ramki */
 }
 
+/* Pomarańczowe tło dla nagłówka restauracji */
+.restaurant-header-bg {
+    background: linear-gradient(135deg, #FF6B35, #E55A2B);
+    border-radius: 16px;
+    padding: 16px;
+    margin-bottom: 20px;
+    color: white;
+}
+
+.restaurant-header-bg h2 {
+    margin: 0;
+    color: white;
+}
+
+.restaurant-header-bg .address {
+    font-size: 14px;
+    opacity: 0.9;
+    margin-top: 4px;
+}
+
+.restaurant-header-bg .rating {
+    text-align: right;
+}
+
+.restaurant-header-bg .rating-value {
+    font-size: 20px;
+    font-weight: 700;
+}
+
+.restaurant-header-bg .rating-label {
+    font-size: 12px;
+    opacity: 0.8;
+}
+
+/* Ikony w nagłówku - białe */
+.restaurant-header-bg i {
+    color: white !important;
+}
+
+/* Animacja delikatnego powiększenia dla prostokątów */
+@keyframes gentlePop {
+    0% { transform: scale(0.98); opacity: 0; }
+    100% { transform: scale(1); opacity: 1; }
+}
+
+#step2Content .bg-warning-subtle,
+#step3Content .bg-warning-subtle {
+    animation: gentlePop 0.3s ease-out;
+}
 </style>
 {% endblock %}
 
@@ -260,20 +303,27 @@
     <!-- Step 1: Date & Time -->
     <div id="step1Content" class="mobile-card">
 
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding-bottom: 12px; border-bottom: 2px solid var(--primary-orange);">
+
+
+
+<div class="restaurant-header-bg" style="display: flex; justify-content: space-between; align-items: center;">
     <div>
-        <h2 style="margin: 0; color: var(--dark);">{{ restaurant.name }}</h2>
-        <div style="font-size: 14px; color: var(--gray); margin-top: 4px;">
-            <i class="fas fa-map-marker-alt" style="color: #20b27f; margin-right: 6px;"></i> {{ restaurant.address }}
+        <h2 style="margin: 0;">{{ restaurant.name }}</h2>
+        <div class="address">
+            <i class="fas fa-map-marker-alt"></i> {{ restaurant.address }}
         </div>
     </div>
-    <div style="text-align: right;">
-        <div style="font-size: 20px; font-weight: 700; color: var(--primary-orange);">
-            <i class="fas fa-star" style="color: #FFD700;"></i> {{ restaurant.rating }}
+    <div class="rating">
+        <div class="rating-value">
+            <i class="fas fa-star"></i> {{ restaurant.rating }}
         </div>
-        <div style="font-size: 12px; color: var(--gray);">ocena</div>
+        <div class="rating-label">ocena</div>
     </div>
 </div>
+
+
+
+
         <h3 style="margin-bottom: 16px;">Zaplanuj wizytę</h3>
 
         <div class="datetime-picker">
@@ -327,9 +377,21 @@
     <!-- Step 2: Table Selection -->
     <div id="step2Content" class="mobile-card" style="display: none;">
     <h3 style="margin-bottom: 16px;">Wybierz stolik na planie sali</h3>
-    <p style="color: var(--gray); margin-bottom: 16px;">
-        Wybrano: <span id="selectedDateTime">...</span> dla <span id="selectedPeople">2</span> osób
-    </p>
+
+<div style="background: #FFF3E8; border-radius: 16px; padding: 16px 20px; margin-bottom: 16px;">
+    <div style="margin-bottom: 12px;">
+        <div style="display: flex; align-items: center; gap: 12px;">
+            <i class="fas fa-calendar-alt" style="color: var(--primary-orange); width: 24px;"></i>
+            <span style="color: var(--gray);">Data i godzina:</span>
+            <span style="font-weight: 600; color: var(--dark); margin-left: auto;" id="selectedDateTime">...</span>
+        </div>
+    </div>
+    <div style="display: flex; align-items: center; gap: 12px;">
+        <i class="fas fa-users" style="color: var(--primary-orange); width: 24px;"></i>
+        <span style="color: var(--gray);">Liczba osób:</span>
+        <span style="font-weight: 600; color: var(--dark); margin-left: auto;" id="selectedPeople">2</span>
+    </div>
+</div>
 
     <!-- Canvas z planem sali -->
     <div class="canvas-container">
@@ -367,24 +429,40 @@
     <div id="step3Content" class="mobile-card" style="display: none;">
         <h3 style="margin-bottom: 16px;">Podsumowanie rezerwacji</h3>
 
-        <div style="background: #f8f9fa; padding: 16px; border-radius: 12px; margin-bottom: 16px;">
-            <div style="display: flex; justify-content: space-between; margin-bottom: 12px;">
-                <span style="color: var(--gray);">Restauracja:</span>
-                <strong>{{ restaurant.name }}</strong>
-            </div>
-            <div style="display: flex; justify-content: space-between; margin-bottom: 12px;">
-                <span style="color: var(--gray);">Data i godzina:</span>
-                <strong id="summaryDateTime"></strong>
-            </div>
-            <div style="display: flex; justify-content: space-between; margin-bottom: 12px;">
-                <span style="color: var(--gray);">Liczba osób:</span>
-                <strong id="summaryPeople"></strong>
-            </div>
-            <div style="display: flex; justify-content: space-between;">
-                <span style="color: var(--gray);">Stolik:</span>
-                <strong id="summaryTable"></strong>
-            </div>
+
+
+<div style="background: #FFF3E8; border-radius: 16px; padding: 20px; margin-bottom: 20px;">
+    <div style="margin-bottom: 16px;">
+        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px;">
+            <i class="fas fa-store" style="color: var(--primary-orange); width: 24px;"></i>
+            <span style="color: var(--gray);">Restauracja:</span>
+            <span style="font-weight: 600; color: var(--dark); margin-left: auto;">{{ restaurant.name }}</span>
         </div>
+        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px;">
+            <i class="fas fa-calendar-alt" style="color: var(--primary-orange); width: 24px;"></i>
+            <span style="color: var(--gray);">Data i godzina:</span>
+            <span style="font-weight: 600; color: var(--dark); margin-left: auto;" id="summaryDateTime"></span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px;">
+            <i class="fas fa-users" style="color: var(--primary-orange); width: 24px;"></i>
+            <span style="color: var(--gray);">Liczba osób:</span>
+            <span style="font-weight: 600; color: var(--dark); margin-left: auto;" id="summaryPeople"></span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 8px;">
+            <i class="fas fa-chair" style="color: var(--primary-orange); width: 24px;"></i>
+            <span style="color: var(--gray);">Stolik:</span>
+            <span style="font-weight: 600; color: var(--dark); margin-left: auto;" id="summaryTable"></span>
+        </div>
+    </div>
+    <div style="height: 1px; background: #FFD2B3; margin: 12px 0;"></div>
+    <div style="display: flex; align-items: center; gap: 8px;">
+        <i class="fas fa-check-circle" style="color: #20b27f; width: 24px;"></i>
+        <span style="color: #20b27f; font-weight: 600;">Gotowe do rezerwacji!</span>
+    </div>
+</div>
+
+
+
 
         <div class="form-group">
             <label class="form-label">Dodatkowe uwagi (opcjonalnie)</label>

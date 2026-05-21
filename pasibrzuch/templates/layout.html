@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>P@SIBRZUCH - {% block title %}Platforma Rezerwacji Restauracji{% endblock %}</title>
+    <title>ResNow - {% block title %}Platforma Rezerwacji Restauracji{% endblock %}</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.1/font/bootstrap-icons.css">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
@@ -101,43 +101,43 @@
     </main>
 
     <!-- Stopka -->
-    <footer class="mt-5">
-        <div class="container">
-            <div class="row">
-                <div class="col-md-4">
-                    <h5><i class="bi bi-egg-fried"></i> P@<strong>SIBRZUCH</strong></h5>
-                    <p>Platforma rezerwacji restauracji w Szczecinie</p>
-                    <p>Znajdź, zarezerwuj, zamów - wszystko w jednym miejscu!</p>
-                </div>
-                <div class="col-md-4">
-                    <h5>Restauracje partnerskie</h5>
-                    <ul class="list-unstyled">
-                        <li><a href="#">13 Muz</a></li>
-                        <li><a href="#">La Bella Italia</a></li>
-                        <li><a href="#">Sushi Master</a></li>
-                        <li><a href="#">Burger House</a></li>
-                    </ul>
-                </div>
-                <div class="col-md-4">
-                    <h5>Kontakt</h5>
-                    <p>Email: kontakt@pasibrzuch.pl</p>
-                    <p>Telefon: +48 123 456 789</p>
-                    <p>Szczecin, Polska</p>
-                </div>
+<footer class="mt-5">
+    <div class="container">
+        <div class="row">
+            <div class="col-md-4">
+                <h5><strong>ResNow</strong></h5>
+                <p>Platforma do rezerwacji stolików i zamawiania dań z wyprzedzeniem</p>
+                <p>Usiądź tam, gdzie chcesz. Zjedz to, co lubisz.</p>
             </div>
-            <hr class="mt-4 mb-4">
-            <div class="row">
-                <div class="col-md-6">
-                    <p>&copy; 2024 P@SIBRZUCH. Wszystkie prawa zastrzeżone.</p>
-                </div>
-                <div class="col-md-6 text-end">
-                    <a href="#" class="text-white me-3"><i class="bi bi-facebook"></i></a>
-                    <a href="#" class="text-white me-3"><i class="bi bi-instagram"></i></a>
-                    <a href="#" class="text-white"><i class="bi bi-twitter"></i></a>
-                </div>
+            <div class="col-md-4">
+                <h5>Restauracje partnerskie</h5>
+                <ul class="list-unstyled">
+                    <li><a href="#">13 Muz</a></li>
+                    <li><a href="#">La Bella Italia</a></li>
+                    <li><a href="#">Sushi Master</a></li>
+                    <li><a href="#">Burger House</a></li>
+                </ul>
+            </div>
+            <div class="col-md-4">
+                <h5>Kontakt</h5>
+                <p>Email: kontakt@resnow.pl</p>
+                <p>Telefon: +48 123 456 789</p>
+                <p>Szczecin, Polska</p>
             </div>
         </div>
-    </footer>
+        <hr class="mt-4 mb-4">
+        <div class="row">
+            <div class="col-md-6">
+                <p>&copy; 2026 ResNow. Wszystkie prawa zastrzeżone.</p>
+            </div>
+            <div class="col-md-6 text-end">
+                <a href="#" class="text-white me-3"><i class="bi bi-facebook"></i></a>
+                <a href="#" class="text-white me-3"><i class="bi bi-instagram"></i></a>
+                <a href="#" class="text-white"><i class="bi bi-twitter"></i></a>
+            </div>
+        </div>
+    </div>
+</footer>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="{{ url_for('static', filename='js/main.js') }}"></script>
