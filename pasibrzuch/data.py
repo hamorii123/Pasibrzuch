@@ -9,7 +9,7 @@ users = [
     {'id': 4, 'name': 'Michał Zieliński', 'email': 'klient2@example.com', 'password': 'klient123', 'role': 'client'}
 ]
 
-# Restauracje w systemie P@SIBRZUCH
+# Restauracje w systemie ResNow
 restaurants = [
     {
         'id': 1,
@@ -36,7 +36,7 @@ restaurants = [
         'description': 'Autentyczna kuchnia włoska w sercu Szczecina',
         'image': '/static/images/bellaitalia.jpg',
         'rating': 4.5,
-        'delivery': True,
+        # Restauracje w systemie ResNow
         'reservation': True
     },
     {
