@@ -1,61 +1,23 @@
+import os
 import json
 from datetime import date, time
 
 from app import app
 from models import db, User, Restaurant, Table, Reservation, MenuItem
 
+# db_path = os.path.join(app.root_path, 'instance', 'app.db')
+# if os.path.exists(db_path):
+#     os.remove(db_path)
+#     print("Stary plik bazy danych został usunięty.")
 
 with app.app_context():
 
-    # Wyczyść stare dane
-    # Reservation.query.delete()
-    # MenuItem.query.delete()
-    # Table.query.delete()
-    # User.query.delete()
-    # Restaurant.query.delete()
+    # db.drop_all()
+    # db.create_all()
+    # print("Tabele bazy danych zostały utworzone na nowo.")
 
-    # ---------- USERS ----------
-
-    users = [
-        User(
-            id=1,
-            name='Jan Kowalski',
-            email='klient@example.com',
-            password='klient123',
-            role='client'
-        ),
-
-        User(
-            id=2,
-            name='Anna Nowak',
-            email='kelner@example.com',
-            password='kelner123',
-            role='waiter',
-            restaurant_id=1
-        ),
-
-        User(
-            id=3,
-            name='Piotr Wiśniewski',
-            email='manager@example.com',
-            password='manager123',
-            role='manager'
-        ),
-
-        User(
-            id=4,
-            name='Michał Kowalczyk',
-            email='kelner2@example.com',
-            password='kelner123',
-            role='waiter',
-            restaurant_id=2
-        )
-    ]
-
-    db.session.add_all(users)
-
-    # ---------- RESTAURANTS ----------
-
+    # ---------- 1. RESTAURANTS ----------
+    # Dodajemy je na samym początku, bo użytkownicy, stoliki i menu ich potrzebują!
     restaurant1 = Restaurant(
         id=1,
         name='13 Muz',
@@ -66,7 +28,6 @@ with app.app_context():
         reservation=True,
         opening_hours='12:00-22:00',
         delivery_time='30-45 min',
-
     )
 
     restaurant2 = Restaurant(
@@ -84,6 +45,46 @@ with app.app_context():
     db.session.add(restaurant1)
     db.session.add(restaurant2)
 
+    # Commitujemy restauracje, aby zapisały się w bazie i ich ID były ważne dla kolejnych kroków
+    db.session.commit()
+
+    # ---------- 2. USERS ----------
+    users = [
+        User(
+            id=1,
+            name='Jan Kowalski',
+            email='klient@example.com',
+            password='klient123',
+            role='client'
+        ),
+        User(
+            id=2,
+            name='Anna Nowak',
+            email='kelner@example.com',
+            password='kelner123',
+            role='waiter',
+            restaurant_id=1  # Teraz restauracja id=1 już istnieje, więc przejdzie gładko!
+        ),
+        User(
+            id=3,
+            name='Piotr Wiśniewski',
+            email='manager@example.com',
+            password='manager123',
+            role='manager'
+        ),
+        User(
+            id=4,
+            name='Michał Kowalczyk',
+            email='kelner2@example.com',
+            password='kelner123',
+            role='waiter',
+            restaurant_id=2  # Restauracja id=2 również istnieje
+        )
+    ]
+
+    db.session.add_all(users)
+
+    # ---------- 3. TABLES ----------
     tables = [
         Table(id=1, restaurant_id=1, number='1', seats=2, status='free', location='Przy oknie', x=100, y=100,
               shape='rectangle', width=80, height=120, rotation=0),
@@ -115,8 +116,7 @@ with app.app_context():
     db.session.add_all(tables)
     db.session.commit()
 
-    # ---------- MENU ITEMS ----------
-
+    # ---------- 4. MENU ITEMS ----------
     menu_items = [
         MenuItem(restaurant_id=1, name='Pierogi ruskie', price=28.0, category='Dania główne',
                  description='Z cebulką i śmietaną'),
@@ -134,8 +134,7 @@ with app.app_context():
     db.session.add_all(menu_items)
     db.session.commit()
 
-    # ---------- RESERVATIONS ----------
-
+    # ---------- 5. RESERVATIONS ----------
     reservations = [
         Reservation(
             user_id=1,
@@ -172,4 +171,4 @@ with app.app_context():
     db.session.add_all(reservations)
     db.session.commit()
 
-    print("Baza została wypełniona.")
+    print("Baza została pomyślnie oczyszczona i wypełniona nowymi danymi.")

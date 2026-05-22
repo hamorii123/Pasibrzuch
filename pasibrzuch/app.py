@@ -1,6 +1,6 @@
 from flask import Flask, render_template, request, redirect, url_for, session, jsonify, flash
 from functools import wraps
-from datetime import datetime
+from datetime import datetime, timedelta, time
 import json
 from flask_migrate import Migrate
 from models import db, User, Restaurant, Table, Reservation, MenuItem
@@ -313,6 +313,10 @@ def submit_reservation(restaurant_id):
         res_date = datetime.strptime(data.get('date'), "%Y-%m-%d").date()
         res_time = datetime.strptime(data.get('time'), "%H:%M").time()
 
+        start_datetime = datetime.combine(res_date, res_time)
+        end_datetime = start_datetime + timedelta(hours=2)
+        res_end_time = end_datetime.time()
+
         table = Table.query.filter_by(
             id=table_id,
             restaurant_id=restaurant_id
@@ -324,8 +328,27 @@ def submit_reservation(restaurant_id):
         if table.seats < people:
             return jsonify({'success': False, 'message': 'Za mały stolik'}), 400
 
-        if table.status != 'free':
-            return jsonify({'success': False, 'message': 'Stolik niedostępny'}), 400
+        # 2. DYNAMICZNA WALIDACJA: Szukamy konfliktów w bazie
+        # Szukamy rezerwacji na ten sam dzień i ten sam stolik, które nakładają się czasowo
+        conflicting_reservation = Reservation.query.filter(
+            Reservation.table_id == table_id,
+            Reservation.date == res_date,
+            Reservation.status.in_(['pending', 'confirmed']),  # Ignorujemy anulowane
+            Reservation.time < res_end_time
+        ).all()
+
+        # Filtrujemy nakładanie się czasu (obsługa obiektów time w Pythonie)
+        for conf in conflicting_reservation:
+            # Obliczamy koniec istniejącej rezerwacji (zakładamy, że każda trwa 2h)
+            conf_start = datetime.combine(res_date, conf.time)
+            conf_end = (conf_start + timedelta(hours=2)).time()
+
+            # Warunek nakładania: Start1 < Koniec2 AND Koniec1 > Start2
+            if res_time < conf_end and res_end_time > conf.time:
+                return jsonify({
+                    'success': False,
+                    'message': f'Stolik jest już zarezerwowany w godzinach {conf.time.strftime("%H:%M")}-{conf_end.strftime("%H:%M")}'
+                }), 400
 
         # --- tworzenie rezerwacji ---
         reservation = Reservation(
@@ -336,11 +359,8 @@ def submit_reservation(restaurant_id):
             time=res_time,
             people=people,
             notes=notes,
-            status='pending'
+            status='confirmed'
         )
-
-        # --- zmiana statusu stolika ---
-        table.status = 'reserved'
 
         db.session.add(reservation)
         db.session.commit()
@@ -470,9 +490,45 @@ def waiter_restaurant_view(restaurant_id):
         flash('Restauracja nie znaleziona', 'danger')
         return redirect(url_for('waiter_my_restaurant'))
 
-    tables_data=Table.query.filter_by(
-        restaurant_id=restaurant_id
+    tables_data = Table.query.filter_by(restaurant_id=restaurant_id).all()
+
+    now = datetime.now()
+    current_date = now.date()
+
+    todays_reservations = Reservation.query.filter(
+        Reservation.restaurant_id == restaurant_id,
+        Reservation.date == current_date,
+        Reservation.status.in_(['pending', 'confirmed'])
     ).all()
+
+    # Mapujemy rezerwacje po table_id dla błyskawicznego dostępu w pamięci
+    res_by_table = {}
+    for res in todays_reservations:
+        if res.table_id not in res_by_table:
+            res_by_table[res.table_id] = []
+        res_by_table[res.table_id].append(res)
+
+    # Dynamicznie nakładamy status 'reserved' tylko na wolne stoliki
+    for table in tables_data:
+        table_reservations = res_by_table.get(table.id, [])
+
+        is_currently_reserved = False
+        for res in table_reservations:
+            res_start = datetime.combine(current_date, res.time)
+            res_end = res_start + timedelta(hours=2)
+
+            if res_start <= now <= res_end:
+                is_currently_reserved = True
+                break
+
+        # KLUCZOWA POPRAWKA LOGIKI:
+        # 1. Jeśli jest rezerwacja i stolik był oznaczony jako wolny -> pokazujemy go jako zarezerwowany
+        if is_currently_reserved and table.status == 'free':
+            table.status = 'reserved'
+
+        # 2. Jeśli rezerwacja minęła (lub jej nie ma), a stolik w bazie wisiał jako 'reserved' -> wraca do 'free'
+        elif not is_currently_reserved and table.status == 'reserved':
+            table.status = 'free'
 
     # Statystyki
     stats = {
@@ -486,7 +542,6 @@ def waiter_restaurant_view(restaurant_id):
                            restaurant=restaurant,
                            tables=tables_data,
                            stats=stats,
-                           upcoming_reservations=[],#upcoming_reservations,
                            current_date=datetime.now().strftime('%A, %d %B %Y'),
                            current_time=datetime.now().strftime('%H:%M'),
                            assigned_restaurant=assigned_restaurant)
