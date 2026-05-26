@@ -125,13 +125,14 @@ def client_dashboard():
         flash('Brak dostępu', 'danger')
         return redirect(url_for('login'))
     restaurants = Restaurant.query.all()
+    reservations = Reservation.query.filter_by(user_id=session['user_id']).all()
 
     return render_template(
         'client/dashboard_mobile.html',
         user_name=session['user_name'],
         restaurants=restaurants,
-        reservations=[],
-        orders=[]
+        reservations=reservations,
+        #orders=[]
     )
 
 @app.route('/client/restaurants')

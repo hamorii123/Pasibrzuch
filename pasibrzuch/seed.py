@@ -7,18 +7,19 @@ from models import db, User, Restaurant, Table, Reservation, MenuItem
 
 # db_path = os.path.join(app.root_path, 'instance', 'app.db')
 # if os.path.exists(db_path):
-#     os.remove(db_path)
-#     print("Stary plik bazy danych został usunięty.")
+#      os.remove(db_path)
+#      print("Stary plik bazy danych został usunięty.")
 
 with app.app_context():
 
-    #db.drop_all()
-    #db.create_all()
-    #print("Tabele bazy danych zostały utworzone na nowo.")
+    # db.drop_all()
+    # db.create_all()
+    # print("Tabele bazy danych zostały utworzone na nowo.")
 
     # ---------- 1. RESTAURANTS ----------
     # Dodajemy je na samym początku, bo użytkownicy, stoliki i menu ich potrzebują!
-    restaurant1 = Restaurant(
+    restaurants = [
+        Restaurant(
         id=1,
         name='13 Muz',
         address='ul. Restauracyjna 13, Szczecin',
@@ -28,9 +29,8 @@ with app.app_context():
         reservation=True,
         opening_hours='12:00-22:00',
         delivery_time='30-45 min',
-    )
-
-    restaurant2 = Restaurant(
+        ),
+        Restaurant(
         id=2,
         name='La Bella Italia',
         address='ul. Włoska 5, Szczecin',
@@ -40,12 +40,27 @@ with app.app_context():
         reservation=True,
         opening_hours='11:00-23:00',
         delivery_time='25-40 min',
-    )
+        ),
+        Restaurant(
+            id=3, name='Sushi Master', address='ul. Japońska 21, Szczecin',
+            rating=4.8, cuisine='Japońska', delivery=True, reservation=True,
+            opening_hours='13:00-22:00', delivery_time='40-55 min'
+        ),
+        Restaurant(
+            id=4, name='Burger Station', address='al. Niepodległości 4, Szczecin',
+            rating=4.4, cuisine='Amerykańska', delivery=True, reservation=True,
+            opening_hours='11:00-00:00', delivery_time='20-35 min'
+        ),
+        Restaurant(
+            id=5, name='Le Bistro', address='ul. Paryska 8, Szczecin',
+            rating=4.6, cuisine='Francuska', delivery=False, reservation=True,
+            opening_hours='16:00-23:00', delivery_time='N/A'
+        )
+    ]
+    for r in restaurants:
+        if not Restaurant.query.get(r.id):
+            db.session.add(r)
 
-    db.session.add(restaurant1)
-    db.session.add(restaurant2)
-
-    # Commitujemy restauracje, aby zapisały się w bazie i ich ID były ważne dla kolejnych kroków
     db.session.commit()
 
     # ---------- 2. USERS ----------
@@ -63,7 +78,7 @@ with app.app_context():
             email='kelner@example.com',
             password='kelner123',
             role='waiter',
-            restaurant_id=1  # Teraz restauracja id=1 już istnieje, więc przejdzie gładko!
+            restaurant_id=1
         ),
         User(
             id=3,
@@ -78,11 +93,14 @@ with app.app_context():
             email='kelner2@example.com',
             password='kelner123',
             role='waiter',
-            restaurant_id=2  # Restauracja id=2 również istnieje
+            restaurant_id=2
         )
     ]
 
-    db.session.add_all(users)
+    for u in users:
+        if not User.query.filter_by(email=u.email).first():
+            db.session.add(u)
+    db.session.commit()
 
     # ---------- 3. TABLES ----------
     tables = [
@@ -111,9 +129,51 @@ with app.app_context():
               shape='rectangle', width=110, height=90, rotation=0),
         Table(id=12, restaurant_id=2, number='4', seats=8, status='reserved', location='VIP', x=750, y=350,
               shape='circle', radius=75, rotation=0),
+
+        # --- NOWE STOLIKI: Restauracja 3 (Sushi Master) ---
+        Table(id=13, restaurant_id=3, number='1', seats=2, status='free', location='Główna sala', x=120, y=120,
+              shape='rectangle', width=80, height=80, rotation=0),
+        Table(id=14, restaurant_id=3, number='2', seats=2, status='free', location='Główna sala', x=120, y=260,
+              shape='rectangle', width=80, height=80, rotation=0),
+        Table(id=15, restaurant_id=3, number='3', seats=4, status='occupied', location='Główna sala', x=300, y=150,
+              shape='circle', radius=55, rotation=0),
+        Table(id=16, restaurant_id=3, number='4', seats=4, status='free', location='Główna sala', x=300, y=320,
+              shape='circle', radius=55, rotation=0),
+        Table(id=17, restaurant_id=3, number='5 (VIP)', seats=6, status='reserved', location='Główna sala', x=600, y=180,
+              shape='rectangle', width=160, height=100, rotation=0),
+        Table(id=18, restaurant_id=3, number='6 (VIP)', seats=6, status='free', location='Główna sala', x=600, y=350,
+              shape='rectangle', width=160, height=100, rotation=90),
+
+        # --- NOWE STOLIKI: Restauracja 4 (Burger Station) ---
+        Table(id=19, restaurant_id=4, number='B1', seats=4, status='occupied', location='Loża A', x=100, y=150,
+              shape='rectangle', width=100, height=100, rotation=0),
+        Table(id=20, restaurant_id=4, number='B2', seats=4, status='free', location='Loża A', x=100, y=300,
+              shape='rectangle', width=100, height=100, rotation=0),
+        Table(id=21, restaurant_id=4, number='B3', seats=6, status='free', location='Loża B', x=300, y=200,
+              shape='rectangle', width=140, height=90, rotation=0),
+        Table(id=22, restaurant_id=4, number='Bar 1', seats=1, status='occupied', location='Hokery przy barze', x=550,
+              y=100, shape='circle', radius=30, rotation=0),
+        Table(id=23, restaurant_id=4, number='Bar 2', seats=1, status='free', location='Hokery przy barze', x=620,
+              y=100, shape='circle', radius=30, rotation=0),
+        Table(id=24, restaurant_id=4, number='Bar 3', seats=1, status='free', location='Hokery przy barze', x=690,
+              y=100, shape='circle', radius=30, rotation=0),
+
+        # --- NOWE STOLIKI: Restauracja 5 (Le Bistro) ---
+        Table(id=25, restaurant_id=5, number='10', seats=2, status='free', location='Sala główna', x=150, y=150,
+              shape='circle', radius=40, rotation=0),
+        Table(id=26, restaurant_id=5, number='11', seats=2, status='reserved', location='Sala główna', x=300, y=150,
+              shape='circle', radius=40, rotation=0),
+        Table(id=27, restaurant_id=5, number='12', seats=4, status='free', location='Sala główna', x=450, y=200,
+              shape='rectangle', width=90, height=120, rotation=45),
+        Table(id=28, restaurant_id=5, number='Ogródek 1', seats=4, status='free', location='Sala główna', x=150,
+              y=450, shape='rectangle', width=100, height=100, rotation=0),
+        Table(id=29, restaurant_id=5, number='Ogródek 2', seats=4, status='cleaning', location='Sala główna', x=350,
+              y=450, shape='rectangle', width=100, height=100, rotation=0)
     ]
 
-    db.session.add_all(tables)
+    for t in tables:
+        if not Table.query.get(t.id):
+            db.session.add(t)
     db.session.commit()
 
     # ---------- 4. MENU ITEMS ----------
@@ -240,10 +300,74 @@ with app.app_context():
         MenuItem(restaurant_id=2, name='Lemoniada Sycylijska', price=15.0, category='Napoje',
                  description='Domowa, mocno cytrynowa lemoniada ze świeżych cytrusów z dodatkiem mięty'),
         MenuItem(restaurant_id=2, name='Espresso', price=9.0, category='Napoje',
-                 description='Klasyczny, intensywny napar ze świeżo mielonych ziaren włoskiej Arabiki')
+                 description='Klasyczny, intensywny napar ze świeżo mielonych ziaren włoskiej Arabiki'),
+
+        # === RESTAURACJA 3: Sushi Master (Kuchnia Japońska) ===
+        MenuItem(restaurant_id=3, name='Zupa Miso', price=16.0, category='Zupy',
+                 description='Tradycyjna japońska zupa na bazie pasty miso z dodatkiem tofu i wodorostów wakame'),
+        MenuItem(restaurant_id=3, name='Sajgonki warzywne', price=18.0, category='Przystawki',
+                 description='Trzy sztuki chrupiących miniaturowych sajgonek z farszem warzywnym, serwowane z sosem słodko-pikantnym'),
+        MenuItem(restaurant_id=3, name='Tatar z łososia', price=39.0, category='Przystawki',
+                 description='Siekany świeży łosoś z dodatkiem awokado, pora, japońskiego majonezu i sosu sojowego'),
+        MenuItem(restaurant_id=3, name='Futomaki Philadephia (6 szt.)', price=28.0, category='Sushi',
+                 description='Klasyczny rolka z łososiem, serkiem Philadelphia, awokado i ogórkiem'),
+        MenuItem(restaurant_id=3, name='California Gold (8 szt.)', price=42.0, category='Sushi',
+                 description='Uramaki z krewetką w tempurze i ogórkiem, obłożone plastrami świeżego łososia i awokado'),
+        MenuItem(restaurant_id=3, name='Zestaw Kyoto (16 szt.)', price=79.0, category='Zestawy',
+                 description='Duży zestaw: 6x Futomaki, 8x California, 2x Nigiri z tuńczykiem'),
+        MenuItem(restaurant_id=3, name='Panna Cotta z malinami', price=20.0, category='Desery',
+                 description='Delikatny deser śmietankowy z musem malinowym (wersja fuzja)'),
+        MenuItem(restaurant_id=3, name='Zielona Herbata Sencha', price=12.0, category='Napoje',
+                 description='Klasyczna japońska zielona herbata liściasta podawana w czajniczku'),
+        MenuItem(restaurant_id=3, name='Woda San Pellegrino', price=14.0, category='Napoje',
+                 description='Naturalna woda gazowana premium (butelka 750ml)'),
+
+        # === RESTAURACJA 4: Burger Station (Kuchnia Amerykańska) ===
+        MenuItem(restaurant_id=4, name='Krążki cebulowe', price=16.0, category='Przystawki',
+                 description='Złociste, chrupiące krążki cebulowe w panierce piwnej, podawane z sosem BBQ'),
+        MenuItem(restaurant_id=4, name='Frytki z batatów', price=18.0, category='Przystawki',
+                 description='Słodkie frytki z batatów, chrupiące i lekko solone, podawane z domowym majonezem czosnkowym'),
+        MenuItem(restaurant_id=4, name='Classic Beef Burger', price=34.0, category='Burgery',
+                 description='100% wołowina, sałata, pomidor, cebula czerwona, ogórek kiszony, sos klasyczny'),
+        MenuItem(restaurant_id=4, name='Cheeseburger Extra', price=38.0, category='Burgery',
+                 description='Soczysta wołowina, podwójny ser cheddar, pikle, musztarda, ketchup, chrupiący bekon'),
+        MenuItem(restaurant_id=4, name='BBQ Bacon Burger', price=42.0, category='Burgery',
+                 description='Wołowina, ser mimolette, chrupiący boczek, krążki cebulowe w środku, gęsty amerykański sos BBQ'),
+        MenuItem(restaurant_id=4, name='Skrzydełka Buffalo (8 szt.)', price=29.0, category='Dania główne',
+                 description='Pikantne skrzydełka z kurczaka glazurowane w ostrym sosie, podawane ze słupkami selera naciowego'),
+        MenuItem(restaurant_id=4, name='Ciepły jabłecznik', price=21.0, category='Desery',
+                 description='Domowa szarlotka na ciepło z lodami waniliowymi'),
+        MenuItem(restaurant_id=4, name='Lemoniada Sycylijska', price=15.0, category='Napoje',
+                 description='Mocno cytrynowa, domowa lemoniada ze świeżą miętą'),
+        MenuItem(restaurant_id=4, name='Coca-Cola', price=10.0, category='Napoje',
+                 description='Klasyczny amerykański gazowany napój podawany z lodem i cytryną'),
+
+        # === RESTAURACJA 5: Le Bistro (Kuchnia Francuska) ===
+        MenuItem(restaurant_id=5, name='Ślimaki w maśle czosnkowym', price=36.0, category='Przystawki',
+                 description='Sześć sztuk ślimaków zapiekanych w maśle z dodatkiem czosnku i świeżej pietruszki, podawane z bagietką'),
+        MenuItem(restaurant_id=5, name='Francuska zupa cebulowa', price=24.0, category='Zupy',
+                 description='Aromatyczna, długo gotowana zupa cebulowa na winie, zapiekana z grzanką i serem gruyère'),
+        MenuItem(restaurant_id=5, name='Tatar wołowy', price=42.0, category='Przystawki',
+                 description='Siekana polędwica wołowa z kaparami, szalotką, musztardą Dijon i surowym żółtkiem'),
+        MenuItem(restaurant_id=5, name='Stek z polędwicy (Filet Mignon)', price=89.0, category='Dania główne',
+                 description='Najwyższej jakości polędwica wołowa, podawana z frytkami i klasycznym francuskim sosem pieprzowym'),
+        MenuItem(restaurant_id=5, name='Kaczka w sosie pomarańczowym', price=64.0, category='Dania główne',
+                 description='Soczysta pierś z kaczki (Magret de Canard) w słodko-wytrawnym sosie z pomarańczy i likieru Grand Marnier'),
+        MenuItem(restaurant_id=5, name='Tiramisu Classico', price=24.0, category='Desery',
+                 description='Włoski akcent deserowy w karcie – puszyste tiramisu z mascarpone'),
+        MenuItem(restaurant_id=5, name='Crème Brûlée', price=22.0, category='Desery',
+                 description='Tradycyjny francuski deser waniliowy ze śmietanki i żółtek z chrupiącą, skarmelizowaną warstwą cukru na wierzchu'),
+        MenuItem(restaurant_id=5, name='Espresso', price=9.0, category='Napoje',
+                 description='Krótka, mocna czarna kawa'),
+        MenuItem(restaurant_id=5, name='Woda San Pellegrino', price=14.0, category='Napoje',
+                 description='Butelkowana woda gazowana premium (750ml)')
     ]
 
-    db.session.add_all(menu_items)
+    for item in menu_items:
+        # Sprawdzamy po unikalnej kombinacji nazwy i restauracji
+        if not MenuItem.query.filter_by(restaurant_id=item.restaurant_id, name=item.name).first():
+            db.session.add(item)
+
     db.session.commit()
 
     # ---------- 5. RESERVATIONS ----------
@@ -280,7 +404,7 @@ with app.app_context():
         )
     ]
 
-    db.session.add_all(reservations)
-    db.session.commit()
+    # db.session.add_all(reservations)
+    # db.session.commit()
 
     print("Baza została pomyślnie oczyszczona i wypełniona nowymi danymi.")
