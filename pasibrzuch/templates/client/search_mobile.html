@@ -144,7 +144,7 @@ body {
                     <input type="text"
                            name="q"
                            class="form-control"
-                           placeholder="🔍 Szukaj restauracji, dań..."
+                           placeholder="🔍 Szukaj dań, restauracji..."
                            value="{{ query }}"
                            style="padding-left: 40px;">
                     <div style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%);">
@@ -170,36 +170,38 @@ body {
         <button class="filter-btn">Wege</button>
     </div>
 
-    <!-- Wyniki wyszukiwania -->
-    {% if query %}
+{% if query %}
     <div>
-        <h4 style="margin-bottom: 16px; color: #333;">Wyniki dla "{{ query }}"</h4>
+        <h4 style="margin-bottom: 16px; color: #333; font-size: 16px;">Wyniki dla "{{ query }}"</h4>
 
-        {% if restaurants %}
-            {% for restaurant in restaurants %}
-            <a href="{{ url_for('client_menu', restaurant_id=restaurant.id) }}" class="restaurant-card">
-                <div class="restaurant-image">
-                    <i class="fas fa-utensils"></i>
-                </div>
-                <div style="padding: 12px;">
-                    <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 8px;">
-                        <h3>{{ restaurant.name }}</h3>
-                        <div style="color: #FF6B35; font-weight: 700;">
-                            <i class="fas fa-star"></i> {{ restaurant.rating }}
+        {% if menu_items %}
+            {% for item in menu_items %}
+            <a href="{{ url_for('client_menu', restaurant_id=item.restaurant_id) }}" class="menu-item-card">
+                <div style="padding: 16px;">
+                    <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 6px;">
+                        <h3 style="margin: 0; font-size: 17px; font-weight: 600; color: #333; padding-right: 8px;">
+                            {{ item.name }}
+                        </h3>
+                        <div style="color: #FF6B35; font-weight: 700; font-size: 17px; white-space: nowrap;">
+                            {{ "%.2f"|format(item.price) }} zł
                         </div>
                     </div>
-                    <div class="restaurant-tags">
-                        <span class="restaurant-tag tag-cuisine">
-                            <i class="fas fa-utensil-spoon" style="margin-right: 4px; font-size: 10px;"></i> {{ restaurant.cuisine }}
+
+                    {% if item.description %}
+                    <p style="margin: 0 0 12px 0; font-size: 13px; color: #666; line-height: 1.4;">
+                        {{ item.description }}
+                    </p>
+                    {% endif %}
+
+                    <div style="display: flex; gap: 8px; flex-wrap: wrap; border-top: 1px solid #f1f1f1; padding-top: 10px;">
+                        <span class="item-badge badge-restaurant">
+                            <i class="fas fa-store" style="margin-right: 4px; font-size: 11px;"></i>
+                            {{ item.restaurant.name }}
                         </span>
-                        <span class="restaurant-tag tag-hours">
-                            <i class="fas fa-clock" style="margin-right: 4px; font-size: 10px;"></i> {{ restaurant.opening_hours }}
+                        <span class="item-badge badge-category">
+                            <i class="fas fa-tags" style="margin-right: 4px; font-size: 11px;"></i>
+                            {{ item.category }}
                         </span>
-                        {% if restaurant.reservation %}
-                        <span class="restaurant-tag tag-reservation">
-                            <i class="fas fa-calendar-check" style="margin-right: 4px; font-size: 10px;"></i> Rezerwacja
-                        </span>
-                        {% endif %}
                     </div>
                 </div>
             </a>
@@ -212,7 +214,6 @@ body {
         {% endif %}
     </div>
     {% else %}
-    <!-- Ostatnie wyszukiwania -->
     <div>
         <h4 style="margin-bottom: 16px; color: #333;">Ostatnie wyszukiwania</h4>
         <a href="{{ url_for('client_search') }}?q=Pizza" class="restaurant-card" style="display: flex; align-items: center; gap: 12px; padding: 12px;">

@@ -21,8 +21,8 @@ def get_tables_for_restaurant(restaurant_id):
 
 # Dane testowe dla koszyka
 sample_cart = [
-    {'id': 1, 'name': 'Stek Wołowy z Grilla', 'price': 45.00, 'quantity': 1},
-    {'id': 2, 'name': 'Zupa Pomidorowa', 'price': 12.00, 'quantity': 2}
+    #{'id': 1, 'name': 'Stek Wołowy z Grilla', 'price': 45.00, 'quantity': 1},
+    #{'id': 2, 'name': 'Zupa Pomidorowa', 'price': 12.00, 'quantity': 2}
 ]
 
 
@@ -159,22 +159,9 @@ def client_menu(restaurant_id):
         flash('Restauracja nie znaleziona', 'danger')
         return redirect(url_for('client_restaurants'))
 
-    menu_items = [
-        {'id': 1, 'name': 'Stek Wołowy z Grilla', 'price': 45.00, 'category': 'Dania Główne',
-         'description': 'Stek z polędwicy wołowej podany z ziemniakami i sosem pieprzowym', 'available': True},
-        {'id': 2, 'name': 'Łosoś z Grilla', 'price': 38.00, 'category': 'Dania Główne',
-         'description': 'Filet z łososia z warzywami sezonowymi', 'available': True},
-        {'id': 3, 'name': 'Zupa Pomidorowa', 'price': 12.00, 'category': 'Zupy',
-         'description': 'Klasyczna zupa pomidorowa z makaronem', 'available': True},
-        {'id': 4, 'name': 'Sałatka Cezar', 'price': 25.00, 'category': 'Sałatki',
-         'description': 'Sałatka z kurczakiem, grzankami i sosem cezar', 'available': True},
-        {'id': 5, 'name': 'Spaghetti Carbonara', 'price': 32.00, 'category': 'Dania Główne',
-         'description': 'Makaron z sosem śmietanowym, boczkiem i żółtkiem', 'available': True},
-        {'id': 6, 'name': 'Tiramisu', 'price': 18.00, 'category': 'Desery',
-         'description': 'Klasyczny włoski deser kawowy', 'available': True}
-    ]
+    menu_items = MenuItem.query.filter_by(restaurant_id=restaurant_id).all()
 
-    categories = list(set([item['category'] for item in menu_items]))
+    categories = list(set([item.category for item in menu_items]))
 
     return render_template('client/menu_mobile.html',
                            restaurant=restaurant,
@@ -185,28 +172,32 @@ def client_menu(restaurant_id):
 @app.route('/client/search')
 @login_required
 def client_search():
-    """Strona wyszukiwania"""
+    """Strona wyszukiwania - teraz szuka po restauracjach, kuchni oraz menu!"""
     if session.get('role') != 'client':
         flash('Brak dostępu', 'danger')
         return redirect(url_for('login'))
 
     query = request.args.get('q', '')
 
-    # Filtruj restauracje
-    filtered_restaurants = []
+
+    filtered_menu_items = []
     if query:
-        query=query.lower()
-        filtered_restaurants = Restaurant.query.filter(
-            (Restaurant.name.ilike(f'%{query}%')) |
-            (Restaurant.cuisine.ilike(f'%{query}%'))
+        query = query.lower()
+
+        # Szukamy bezpośrednio w MenuItem i dołączamy relację do Restaurant
+        filtered_menu_items = MenuItem.query.join(Restaurant).filter(
+            (MenuItem.name.ilike(f'%{query}%')) |  # Szukaj po nazwie dania
+            (MenuItem.description.ilike(f'%{query}%')) |  # Szukaj po opisie dania
+            (MenuItem.category.ilike(f'%{query}%')) |  # Szukaj po kategorii (np. Dania główne)
+            (Restaurant.name.ilike(f'%{query}%'))  # Szukaj po nazwie restauracji (pokaże całe menu danej restauracji)
         ).all()
     else:
-        filtered_restaurants = Restaurant.query.all()
+        # Jeśli nie ma query, możesz zostawić puste lub wyciągnąć np. kilka losowych/wszystkie dań
+        filtered_menu_items = MenuItem.query.all()
 
     return render_template('client/search_mobile.html',
                            query=query,
-                           restaurants=filtered_restaurants)
-
+                           menu_items=filtered_menu_items)
 
 @app.route('/client/cart')
 @login_required
