@@ -530,18 +530,23 @@ function drawTables() {
     const scaleY = canvas.height / 600;
 
     tablesData.forEach(table => {
-        // Sprawdź czy stolik spełnia warunek liczby miejsc
+        // 1. Warunek liczby miejsc (jeśli za mały -> szary)
         const meetsSeatsRequirement = table.seats >= peopleFilter;
-        const isAvailable = table.status === 'free' && meetsSeatsRequirement;
-        const isSelected = selectedTableId === table.id;
 
-        let color = statusColors[table.status] || statusColors.free;
-        let opacity = meetsSeatsRequirement ? 0.7 : 0.3;
+        let color = statusColors.free; // Domyślnie zielony (#27AE60)
+        let opacity = 0.7;
 
         if (!meetsSeatsRequirement) {
-            color = '#cccccc';
+            color = '#cccccc'; // SZARY - za mały stolik
             opacity = 0.4;
-        } else if (table.status !== 'free') {
+        } else if (table.status === 'reserved') {
+            color = statusColors.reserved; // POMARAŃCZOWY (#F39C12) - zajęty przez rezerwację w tych godzinach
+            opacity = 0.8;
+        } else if (table.status === 'occupied') {
+            color = statusColors.occupied; // CZERWONY (#E74C3C) - zajęty na żywo przez kelnera
+            opacity = 0.8;
+        } else if (table.status === 'cleaning') {
+            color = statusColors.cleaning; // NIEBIESKI (#3498DB) - sprzątanie ustawione przez kelnera
             opacity = 0.6;
         }
 
@@ -557,16 +562,12 @@ function drawTables() {
 
         ctx.fillStyle = color;
         ctx.globalAlpha = opacity;
-        // te 2 linijki zamieniłem
-        //ctx.strokeStyle = 'transparent';
-        // ctx.lineWidth = 0;
 
         if (table.shape === 'circle') {
             const radius = (table.radius || 50) * Math.min(scaleX, scaleY);
             ctx.beginPath();
             ctx.arc(0, 0, radius, 0, Math.PI * 2);
             ctx.fill();
-            //ctx.stroke();
 
             // Numer stolika
             ctx.fillStyle = '#333';
@@ -580,7 +581,6 @@ function drawTables() {
             const width = (table.width || 100) * scaleX;
             const height = (table.height || 80) * scaleY;
             ctx.fillRect(-width/2, -height/2, width, height);
-            //ctx.strokeRect(-width/2, -height/2, width, height);
 
             // Numer stolika
             ctx.fillStyle = '#333';
@@ -658,8 +658,14 @@ function handleCanvasClick(e) {
         } else if (!meetsSeats) {
             showToast('warning', `Stolik ${clickedTable.number} ma tylko ${clickedTable.seats} miejsc`);
         } else if (!isFree) {
-            let statusText = clickedTable.status === 'occupied' ? 'zajęty' :
-                            clickedTable.status === 'reserved' ? 'zarezerwowany' : 'w sprzątaniu';
+            let statusText = '';
+            if (clickedTable.status === 'reserved') {
+                statusText = 'już zarezerwowany na tę godzinę';
+            } else if (clickedTable.status === 'occupied') {
+                statusText = 'obecnie zajęty przez gości w lokalu';
+            } else if (clickedTable.status === 'cleaning') {
+                statusText = 'właśnie sprzątany i przygotowywany';
+            }
             showToast('warning', `Stolik ${clickedTable.number} jest ${statusText}`);
         }
     }
@@ -721,7 +727,7 @@ function selectTime(time) {
     reservationData.time = time;
 }
 
-function goToStep2() {
+async function goToStep2() {
     reservationData.date = document.getElementById('reservationDate').value;
     reservationData.people = parseInt(document.getElementById('peopleCount').value);
     reservationData.time = document.querySelector('.time-slot.selected')?.textContent;
@@ -734,20 +740,56 @@ function goToStep2() {
     // Aktualizuj filtr osób
     peopleFilter = reservationData.people;
 
+    try {
+        // 1. Pobieramy dynamiczną dostępność (rezerwacje) z backendu
+        const response = await fetch(`{{ url_for('check_table_availability', restaurant_id=restaurant.id) }}?date=${reservationData.date}&time=${reservationData.time}`);
+        const data = await response.json();
+
+        if (data.success) {
+            tablesData.forEach(table => {
+                // JEŻELI KELNER ustawił status na zajęty lub sprzątanie w bazie, zachowujemy go
+                if (table.status === 'occupied' || table.status === 'cleaning') {
+                    // Zostaje status przypisany przez kelnera (czerwony lub niebieski)
+                }
+                // W PRZECIWNYM WYPADKU sprawdzamy, czy wpada w grafik rezerwacji
+                else if (data.reserved_table_ids.includes(table.id)) {
+                    table.status = 'reserved'; // Pomarańczowy (Zarezerwowany)
+                } else {
+                    table.status = 'free';     // Zielony (Wolny)
+                }
+            });
+        }
+    } catch (error) {
+        console.error("Błąd połączenia z serwerem:", error);
+    }
+
     // Update UI
     document.getElementById('step1').classList.remove('active');
     document.getElementById('step2').classList.add('active');
     document.getElementById('step1Content').style.display = 'none';
     document.getElementById('step2Content').style.display = 'block';
 
-    document.getElementById('selectedDateTime').textContent =
-        `${reservationData.date} ${reservationData.time}`;
+    document.getElementById('selectedDateTime').textContent = `${reservationData.date} ${reservationData.time}`;
     document.getElementById('selectedPeople').textContent = reservationData.people;
 
-    // Inicjalizuj canvas
+    selectedTableId = null;
+    reservationData.tableId = null;
+    reservationData.tableNumber = null;
+
+    if(document.getElementById('selectedTableInfo')) {
+        document.getElementById('selectedTableInfo').style.display = 'none';
+    }
+
+    const nextBtn = document.getElementById('nextToStep3Btn');
+    if(nextBtn) {
+        nextBtn.disabled = true;
+        nextBtn.style.opacity = '0.5';
+    }
+
     setTimeout(() => {
         initCanvas();
-        updatePeopleFilter();
+        const hasAvailable = tablesData.some(t => t.status === 'free' && t.seats >= peopleFilter);
+        document.getElementById('noAvailableTableMsg').style.display = hasAvailable ? 'none' : 'block';
     }, 100);
 }
 

@@ -228,13 +228,9 @@ def client_profile():
     # Znajdź użytkownika
     user = User.query.get(session['user_id'])
 
-    # Dane testowe
-    reservations = [
-        {'id': 1, 'restaurant_name': '13 Muz', 'date': '2024-01-15', 'time': '18:00', 'people': 2,
-         'status': 'Potwierdzona'},
-        {'id': 2, 'restaurant_name': 'La Bella Italia', 'date': '2024-01-20', 'time': '19:30', 'people': 4,
-         'status': 'Oczekująca'}
-    ]
+    reservations = Reservation.query.filter_by(user_id=user.id) \
+        .order_by(Reservation.date.desc(), Reservation.time.desc()) \
+        .all()
 
     orders = [
         {'id': 1, 'restaurant_name': '13 Muz', 'date': '2024-01-10', 'total': 89.00, 'status': 'Dostarczone'},
@@ -245,6 +241,51 @@ def client_profile():
                            user=user,
                            reservations=reservations,
                            orders=orders)
+
+@app.route('/client/reservation/<int:restaurant_id>/check_availability')
+@login_required
+def check_table_availability(restaurant_id):
+    """Zwraca listę ID stolików, które są już zajęte w danym terminie"""
+    if session.get('role') != 'client':
+        return jsonify({'success': False, 'message': 'Brak dostępu'}), 403
+
+    res_date_str = request.args.get('date')
+    res_time_str = request.args.get('time')
+
+    if not res_date_str or not res_time_str:
+        return jsonify({'success': False, 'message': 'Brak daty lub godziny'}), 400
+
+    try:
+        res_date = datetime.strptime(res_date_str, "%Y-%m-%d").date()
+        res_time = datetime.strptime(res_time_str, "%H:%M").time()
+
+        # Zakładamy standardowy czas trwania rezerwacji: 2 godziny
+        start_datetime = datetime.combine(res_date, res_time)
+        end_datetime = start_datetime + timedelta(hours=2)
+        res_end_time = end_datetime.time()
+
+        # Szukamy rezerwacji, które nakładają się czasowo
+        conflicting_reservations = Reservation.query.filter(
+            Reservation.restaurant_id == restaurant_id,
+            Reservation.date == res_date,
+            Reservation.status.in_(['pending', 'confirmed'])
+        ).all()
+
+        reserved_table_ids = []
+        for conf in conflicting_reservations:
+            conf_start = datetime.combine(res_date, conf.time)
+            conf_end = (conf_start + timedelta(hours=2)).time()
+
+            # Warunek nakładania się przedziałów czasowych
+            if res_time < conf_end and res_end_time > conf.time:
+                reserved_table_ids.append(conf.table_id)
+
+        return jsonify({
+            'success': True,
+            'reserved_table_ids': reserved_table_ids
+        })
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
 
 
 @app.route('/client/reservation/<int:restaurant_id>')
