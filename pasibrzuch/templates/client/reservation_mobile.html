@@ -390,14 +390,18 @@
                 {% for cat in categories %}
                     <h5 style="color: var(--primary-orange); margin-top: 18px; margin-bottom: 10px; border-bottom: 1px solid #eee; padding-bottom: 4px; font-weight: 600;">{{ cat }}</h5>
                     {% for item in restaurant.menu_items if item.category == cat and item.available %}
-                        <div class="menu-item-card" data-id="{{ item.id }}" data-name="{{ item.name }}" onclick="toggleMenuItem(this)">
+                        <div class="menu-item-card" data-id="{{ item.id }}" data-name="{{ item.name }}">
                             <div style="flex: 1; padding-right: 12px;">
                                 <div style="font-weight: 600; color: #333; font-size: 14px;">{{ item.name }}</div>
                                 <div style="font-size: 12px; color: #777; line-height: 1.3; margin-top: 3px;">{{ item.description }}</div>
                             </div>
                             <div style="text-align: right; min-width: 80px;">
                                 <span style="font-weight: 700; color: var(--dark); font-size: 14px;">{{ "%.2f"|format(item.price) }} zł</span>
-                                <div class="badge-status" style="font-size: 11px; color: #20b27f; font-weight: bold; display: none; margin-top: 4px;"><i class="fas fa-check-circle"></i> Dodano</div>
+                                <div class="quantity-control" style="display: flex; align-items: center; gap: 8px; margin-top: 6px; justify-content: flex-end;">
+                                    <button type="button" class="btn-qty" onclick="changeQty({{ item.id }}, '{{ item.name }}', -1)" style="width:24px; height:24px; border-radius:50%; border:1px solid #ccc; background:#fff;">-</button>
+                                    <span id="qty-text-{{ item.id }}" style="font-weight:bold; min-width:15px; text-align:center;">0</span>
+                                    <button type="button" class="btn-qty" onclick="changeQty({{ item.id }}, '{{ item.name }}', 1)" style="width:24px; height:24px; border-radius:50%; border:1px solid #ccc; background:#fff;">+</button>
+                                </div>
                             </div>
                         </div>
                     {% endfor %}
@@ -535,8 +539,8 @@ let reservationData = {
     people: 2,
     tableId: null,
     tableNumber: '',
-    menuItemIds: [],       // ID dań przesyłane do bazy danych
-    menuItemNames: []      // Nazwy dań wyświetlane w podsumowaniu (Krok 4)
+    menuItems: {},
+    menuItemDetails: {}
 };
 
 function initCanvas() {
@@ -552,6 +556,36 @@ function initCanvas() {
 
     drawTables();
     canvas.addEventListener('click', handleCanvasClick);
+}
+
+function changeQty(itemId, itemName, change) {
+    // 1. Pobierz aktualną ilość lub przypisz 0
+    let currentQty = reservationData.menuItems[itemId] || 0;
+    let newQty = currentQty + change;
+
+    if (newQty < 0) newQty = 0;
+
+    // 2. Znajdź elementy w drzewie DOM HTML
+    const card = document.querySelector(`.menu-item-card[data-id="${itemId}"]`);
+    const qtyText = document.getElementById(`qty-text-${itemId}`);
+
+    // 3. Zapisz dane do struktury rezerwacji
+    if (newQty > 0) {
+        reservationData.menuItems[itemId] = newQty;
+        reservationData.menuItemDetails[itemId] = { name: itemName, qty: newQty };
+        if (card) card.classList.add('selected-item');
+    } else {
+        delete reservationData.menuItems[itemId];
+        delete reservationData.menuItemDetails[itemId];
+        if (card) card.classList.remove('selected-item');
+    }
+
+    // 4. Zmień cyfrę na ekranie telefonu
+    if (qtyText) {
+        qtyText.textContent = newQty;
+    } else {
+        console.error(`Nie znaleziono elementu o id: qty-text-${itemId}`);
+    }
 }
 
 function drawTables() {
@@ -710,24 +744,6 @@ function selectTime(time) {
     reservationData.time = time;
 }
 
-// ========== LOGIKA WYBORU DAŃ (KROK 2) ==========
-function toggleMenuItem(element) {
-    const itemId = parseInt(element.getAttribute('data-id'));
-    const itemName = element.getAttribute('data-name');
-    const badge = element.querySelector('.badge-status');
-
-    if (element.classList.contains('selected-item')) {
-        element.classList.remove('selected-item');
-        if (badge) badge.style.display = 'none';
-        reservationData.menuItemIds = reservationData.menuItemIds.filter(id => id !== itemId);
-        reservationData.menuItemNames = reservationData.menuItemNames.filter(name => name !== itemName);
-    } else {
-        element.classList.add('selected-item');
-        if (badge) badge.style.display = 'block';
-        reservationData.menuItemIds.push(itemId);
-        reservationData.menuItemNames.push(itemName);
-    }
-}
 
 // ========== NAWIGACJA MIĘDZY KROKAMI (1 -> 2 -> 3 -> 4) ==========
 
@@ -820,10 +836,12 @@ function goToStep4() {
     const menuListElement = document.getElementById('summaryMenuList');
     if (menuListElement) {
         menuListElement.innerHTML = '';
-        if (reservationData.menuItemNames.length > 0) {
-            reservationData.menuItemNames.forEach(name => {
+        const items = Object.values(reservationData.menuItemDetails || {});
+
+        if (items.length > 0) {
+            items.forEach(item => {
                 const li = document.createElement('li');
-                li.textContent = name;
+                li.textContent = `${item.name} x ${item.qty}`; // Wyświetli np. "Pizza Margherita x 2"
                 menuListElement.appendChild(li);
             });
         } else {

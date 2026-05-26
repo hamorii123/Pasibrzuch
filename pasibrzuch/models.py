@@ -4,11 +4,6 @@ import json
 
 db = SQLAlchemy()
 
-reservation_menu_items = db.Table('reservation_menu_items',
-    db.Column('reservation_id', db.Integer, db.ForeignKey('reservations.id', ondelete='CASCADE'), primary_key=True),
-    db.Column('menu_item_id', db.Integer, db.ForeignKey('menu_items.id', ondelete='CASCADE'), primary_key=True)
-)
-
 class User(db.Model):
     __tablename__ = 'users'
 
@@ -91,6 +86,19 @@ class Table(db.Model):
         backref='tables'
     )
 
+
+class ReservationItem(db.Model):
+    __tablename__ = 'reservation_items'
+
+    reservation_id = db.Column(db.Integer, db.ForeignKey('reservations.id', ondelete='CASCADE'), primary_key=True)
+    menu_item_id = db.Column(db.Integer, db.ForeignKey('menu_items.id', ondelete='CASCADE'), primary_key=True)
+
+    # Dodatkowa kolumna na ilość!
+    quantity = db.Column(db.Integer, nullable=False, default=1)
+
+    # Relacje pomocnicze, by łatwo wyciągać dane dania w pętli
+    menu_item = db.relationship('MenuItem')
+
 class Reservation(db.Model):
     __tablename__ = 'reservations'
 
@@ -99,38 +107,27 @@ class Reservation(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     restaurant_id = db.Column(db.Integer, db.ForeignKey('restaurants.id'), nullable=False)
     table_id = db.Column(db.Integer, db.ForeignKey('tables.id'), nullable=False)
-
     date = db.Column(db.Date, nullable=False)
     time = db.Column(db.Time, nullable=False)
-
     people = db.Column(db.Integer, nullable=False)
-
     status = db.Column(db.String(20), default='pending')  # pending, confirmed, cancelled
-
     notes = db.Column(db.Text)
-
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     user = db.relationship('User', backref='reservations')
     table = db.relationship('Table', backref='reservations')
     restaurant = db.relationship('Restaurant', backref='reservations')
-    menu_items = db.relationship('MenuItem', secondary=reservation_menu_items,
-                                 backref=db.backref('reservations', lazy='dynamic'))
+    items = db.relationship('ReservationItem', backref='reservation', cascade="all, delete-orphan")
 
 class MenuItem(db.Model):
     __tablename__ = 'menu_items'
 
     id = db.Column(db.Integer, primary_key=True)
-
     restaurant_id = db.Column(db.Integer, db.ForeignKey('restaurants.id'))
-
     name = db.Column(db.String(100))
     price = db.Column(db.Float)
-
     category = db.Column(db.String(50))
     description = db.Column(db.Text)
-
     available = db.Column(db.Boolean, default=True)
-
     restaurant = db.relationship('Restaurant', backref='menu_items')
 

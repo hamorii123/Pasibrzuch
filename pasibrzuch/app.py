@@ -3,7 +3,7 @@ from functools import wraps
 from datetime import datetime, timedelta, time
 import json
 from flask_migrate import Migrate
-from models import db, User, Restaurant, Table, Reservation, MenuItem
+from models import db, User, Restaurant, Table, Reservation, MenuItem, ReservationItem
 
 app = Flask(__name__)
 app.secret_key = 'pasibrzuch_mobile_2024_secret'
@@ -394,13 +394,18 @@ def submit_reservation(restaurant_id):
             status='confirmed'
         )
 
-        menu_item_ids = data.get('menuItemIds', [])  # Pobieramy tablicę ID z front-endu
+        menu_items_ordered = data.get('menuItems', {})  # Pobieramy tablicę ID z front-endu
 
-        if menu_item_ids:
-            # Wyciągamy z bazy tylko te dania, które pasują do przesłanych ID
-            selected_dishes = MenuItem.query.filter(MenuItem.id.in_(menu_item_ids)).all()
-            # Wykorzystujemy relację i metodę extend(), aby przypisać całą listę obiektów
-            reservation.menu_items.extend(selected_dishes)
+        for item_id_str, qty in menu_items_ordered.items():
+            qty = int(qty)
+            if qty > 0:
+                # Tworzymy pojedynczy wpis zamówienia o określonej ilości
+                order_item = ReservationItem(
+                    menu_item_id=int(item_id_str),
+                    quantity=qty
+                )
+                # Dorzucamy do relacji rezerwacji
+                reservation.items.append(order_item)
 
         db.session.add(reservation)
         db.session.commit()
