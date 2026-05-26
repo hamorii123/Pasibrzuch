@@ -119,6 +119,17 @@ class Reservation(db.Model):
     restaurant = db.relationship('Restaurant', backref='reservations')
     items = db.relationship('ReservationItem', backref='reservation', cascade="all, delete-orphan")
 
+    @property
+    def total_price(self):
+        """Oblicza łączną wartość zamówionych dań do tej rezerwacji"""
+        total = 0.0
+        for item in self.items:
+            # item to obiekt ReservationItem
+            # item.menu_item to obiekt MenuItem, z którego bierzemy cenę
+            if item.menu_item:
+                total += item.quantity * item.menu_item.price
+        return total
+
 class MenuItem(db.Model):
     __tablename__ = 'menu_items'
 

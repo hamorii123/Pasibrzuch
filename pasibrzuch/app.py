@@ -232,15 +232,12 @@ def client_profile():
         .order_by(Reservation.date.desc(), Reservation.time.desc()) \
         .all()
 
-    orders = [
-        {'id': 1, 'restaurant_name': '13 Muz', 'date': '2024-01-10', 'total': 89.00, 'status': 'Dostarczone'},
-        {'id': 2, 'restaurant_name': 'La Bella Italia', 'date': '2024-01-12', 'total': 124.50, 'status': 'W drodze'}
-    ]
+    restaurants = Restaurant.query.all()
 
     return render_template('client/profile_mobile.html',
                            user=user,
                            reservations=reservations,
-                           orders=orders)
+                           resturants=restaurants)
 
 @app.route('/client/reservation/<int:restaurant_id>/check_availability')
 @login_required
