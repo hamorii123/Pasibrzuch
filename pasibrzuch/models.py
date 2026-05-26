@@ -4,6 +4,10 @@ import json
 
 db = SQLAlchemy()
 
+reservation_menu_items = db.Table('reservation_menu_items',
+    db.Column('reservation_id', db.Integer, db.ForeignKey('reservations.id', ondelete='CASCADE'), primary_key=True),
+    db.Column('menu_item_id', db.Integer, db.ForeignKey('menu_items.id', ondelete='CASCADE'), primary_key=True)
+)
 
 class User(db.Model):
     __tablename__ = 'users'
@@ -110,6 +114,8 @@ class Reservation(db.Model):
     user = db.relationship('User', backref='reservations')
     table = db.relationship('Table', backref='reservations')
     restaurant = db.relationship('Restaurant', backref='reservations')
+    menu_items = db.relationship('MenuItem', secondary=reservation_menu_items,
+                                 backref=db.backref('reservations', lazy='dynamic'))
 
 class MenuItem(db.Model):
     __tablename__ = 'menu_items'

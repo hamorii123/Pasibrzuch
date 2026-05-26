@@ -269,6 +269,31 @@
     color: white !important;
 }
 
+/* Styl dla kart dań w menu */
+.menu-item-card {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 14px;
+    border: 2px solid #e0e0e0 !important;
+    border-radius: 12px;
+    margin-bottom: 10px;
+    background: white;
+    transition: all 0.2s ease;
+    cursor: pointer;
+}
+
+/* Stan po kliknięciu (Wybrane danie) - zielona ramka i delikatne tło */
+.menu-item-card.selected-item {
+    border-color: #20b27f !important;
+    background-color: #f0fbf7 !important;
+    box-shadow: 0 2px 6px rgba(32,178,170,0.15);
+}
+
+.menu-item-card:active {
+    transform: scale(0.98);
+}
+
 /* Animacja delikatnego powiększenia dla prostokątów */
 @keyframes gentlePop {
     0% { transform: scale(0.98); opacity: 0; }
@@ -284,198 +309,203 @@
 
 {% block content %}
 <div class="mobile-container">
-    <!-- Steps Indicator -->
     <div class="reservation-steps">
         <div class="step active" id="step1">
             <div class="step-number">1</div>
-            <div style="font-size: 12px;">Data/Godzina</div>
+            <div style="font-size: 11px;">Termin</div>
         </div>
         <div class="step" id="step2">
             <div class="step-number">2</div>
-            <div style="font-size: 12px;">Stolik</div>
+            <div style="font-size: 11px;">Menu</div>
         </div>
         <div class="step" id="step3">
             <div class="step-number">3</div>
-            <div style="font-size: 12px;">Potwierdzenie</div>
+            <div style="font-size: 11px;">Stolik</div>
+        </div>
+        <div class="step" id="step4">
+            <div class="step-number">4</div>
+            <div style="font-size: 11px;">Podsumowanie</div>
         </div>
     </div>
 
-    <!-- Step 1: Date & Time -->
     <div id="step1Content" class="mobile-card">
-
-
-
-
-<div class="restaurant-header-bg" style="display: flex; justify-content: space-between; align-items: center;">
-    <div>
-        <h2 style="margin: 0;">{{ restaurant.name }}</h2>
-        <div class="address">
-            <i class="fas fa-map-marker-alt"></i> {{ restaurant.address }}
+        <div class="restaurant-header-bg" style="display: flex; justify-content: space-between; align-items: center;">
+            <div>
+                <h2 style="margin: 0;">{{ restaurant.name }}</h2>
+                <div class="address"><i class="fas fa-map-marker-alt"></i> {{ restaurant.address }}</div>
+            </div>
+            <div class="rating">
+                <div class="rating-value"><i class="fas fa-star"></i> {{ restaurant.rating }}</div>
+                <div class="rating-label">ocena</div>
+            </div>
         </div>
-    </div>
-    <div class="rating">
-        <div class="rating-value">
-            <i class="fas fa-star"></i> {{ restaurant.rating }}
-        </div>
-        <div class="rating-label">ocena</div>
-    </div>
-</div>
-
-
-
 
         <h3 style="margin-bottom: 16px;">Zaplanuj wizytę</h3>
-
         <div class="datetime-picker">
-    <div class="form-group">
-        <label class="form-label">
-            <i class="fas fa-calendar-alt" style="color: var(--primary-orange); margin-right: 6px;"></i>
-            Data
-        </label>
-        <input type="date" class="form-control" id="reservationDate" min="{{ now.strftime('%Y-%m-%d') }}" value="{{ now.strftime('%Y-%m-%d') }}">
-    </div>
-
-    <div class="form-group">
-        <label class="form-label">
-            <i class="fas fa-users" style="color: var(--primary-orange); margin-right: 6px;"></i>
-            Liczba osób
-        </label>
-        <select class="form-control" id="peopleCount">
-            <option value="1">1 osoba</option>
-            <option value="2" selected>2 osoby</option>
-            <option value="3">3 osoby</option>
-            <option value="4">4 osoby</option>
-            <option value="5">5 osób</option>
-            <option value="6">6 osób</option>
-        </select>
-    </div>
-</div>
-
-<div class="form-group">
-    <label class="form-label">
-        <i class="fas fa-clock" style="color: var(--primary-orange); margin-right: 6px;"></i>
-        Godzina
-    </label>
-    <div class="time-slots">
-        <button class="time-slot" onclick="selectTime('17:00')">17:00</button>
-        <button class="time-slot" onclick="selectTime('17:30')">17:30</button>
-        <button class="time-slot" onclick="selectTime('18:00')">18:00</button>
-        <button class="time-slot" onclick="selectTime('18:30')">18:30</button>
-        <button class="time-slot" onclick="selectTime('19:00')">19:00</button>
-        <button class="time-slot" onclick="selectTime('19:30')">19:30</button>
-        <button class="time-slot" onclick="selectTime('20:00')">20:00</button>
-        <button class="time-slot" onclick="selectTime('20:30')">20:30</button>
-        <button class="time-slot" onclick="selectTime('21:00')">21:00</button>
-    </div>
-</div>
-
-        <button class="btn-mobile btn-primary" onclick="goToStep2()">
-            Dalej: Wybór stolika
-        </button>
-    </div>
-
-    <!-- Step 2: Table Selection -->
-    <div id="step2Content" class="mobile-card" style="display: none;">
-    <h3 style="margin-bottom: 16px;">Wybierz stolik na planie sali</h3>
-
-<div style="background: #FFF3E8; border-radius: 16px; padding: 16px 20px; margin-bottom: 16px;">
-    <div style="margin-bottom: 12px;">
-        <div style="display: flex; align-items: center; gap: 12px;">
-            <i class="fas fa-calendar-alt" style="color: var(--primary-orange); width: 24px;"></i>
-            <span style="color: var(--gray);">Data i godzina:</span>
-            <span style="font-weight: 600; color: var(--dark); margin-left: auto;" id="selectedDateTime">...</span>
+            <div class="form-group">
+                <label class="form-label"><i class="fas fa-calendar-alt" style="color: var(--primary-orange); margin-right: 6px;"></i>Data</label>
+                <input type="date" class="form-control" id="reservationDate" min="{{ now.strftime('%Y-%m-%d') }}" value="{{ now.strftime('%Y-%m-%d') }}">
+            </div>
+            <div class="form-group">
+                <label class="form-label"><i class="fas fa-users" style="color: var(--primary-orange); margin-right: 6px;"></i>Liczba osób</label>
+                <select class="form-control" id="peopleCount">
+                    <option value="1">1 osoba</option>
+                    <option value="2" selected>2 osoby</option>
+                    <option value="3">3 osoby</option>
+                    <option value="4">4 osoby</option>
+                    <option value="5">5 osób</option>
+                    <option value="6">6 osób</option>
+                </select>
+            </div>
         </div>
-    </div>
-    <div style="display: flex; align-items: center; gap: 12px;">
-        <i class="fas fa-users" style="color: var(--primary-orange); width: 24px;"></i>
-        <span style="color: var(--gray);">Liczba osób:</span>
-        <span style="font-weight: 600; color: var(--dark); margin-left: auto;" id="selectedPeople">2</span>
-    </div>
-</div>
-
-    <!-- Canvas z planem sali -->
-    <div class="canvas-container">
-        <canvas id="floorCanvas" width="600" height="400" style="width:100%; height:auto; max-width:600px; aspect-ratio:600/400"></canvas>
-    </div>
-
-    <!-- Legenda -->
-    <div class="canvas-legend">
-        <div><span class="legend-dot free"></span><span class="legend-text">Wolny</span></div>
-        <div><span class="legend-dot occupied"></span><span class="legend-text">Zajęty</span></div>
-        <div><span class="legend-dot reserved"></span><span class="legend-text">Zarezerwowany</span></div>
-        <div><span class="legend-dot cleaning"></span><span class="legend-text">Sprzątanie</span></div>
-        <div><span class="legend-dot disabled"></span><span class="legend-text">Za mały</span></div>
-    </div>
-
-    <!-- Informacja o wybranym stoliku -->
-    <div id="selectedTableInfo" class="selected-table-info" style="display: none;">
-        Wybrany stolik: <strong id="selectedTableNumber">-</strong>
-        (<span id="selectedTableSeats">-</span> miejsc)
-    </div>
-
-    <div id="noAvailableTableMsg" class="table-unavailable-message" style="display: none;">
-        <i class="fas fa-info-circle"></i> Brak wolnych stolików dla wybranej liczby osób
-    </div>
-
-    <div style="display: flex; gap: 12px; margin-top: 16px;">
-        <button class="btn-mobile btn-secondary" onclick="backToStep1()">Wróć</button>
-        <button class="btn-mobile btn-primary" id="nextToStep3Btn" onclick="goToStep3()" disabled style="opacity:0.5;">
-            Dalej: Podsumowanie
-        </button>
-    </div>
-</div>
-
-    <!-- Step 3: Confirmation -->
-    <div id="step3Content" class="mobile-card" style="display: none;">
-        <h3 style="margin-bottom: 16px;">Podsumowanie rezerwacji</h3>
-
-
-
-<div style="background: #FFF3E8; border-radius: 16px; padding: 20px; margin-bottom: 20px;">
-    <div style="margin-bottom: 16px;">
-        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px;">
-            <i class="fas fa-store" style="color: var(--primary-orange); width: 24px;"></i>
-            <span style="color: var(--gray);">Restauracja:</span>
-            <span style="font-weight: 600; color: var(--dark); margin-left: auto;">{{ restaurant.name }}</span>
-        </div>
-        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px;">
-            <i class="fas fa-calendar-alt" style="color: var(--primary-orange); width: 24px;"></i>
-            <span style="color: var(--gray);">Data i godzina:</span>
-            <span style="font-weight: 600; color: var(--dark); margin-left: auto;" id="summaryDateTime"></span>
-        </div>
-        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px;">
-            <i class="fas fa-users" style="color: var(--primary-orange); width: 24px;"></i>
-            <span style="color: var(--gray);">Liczba osób:</span>
-            <span style="font-weight: 600; color: var(--dark); margin-left: auto;" id="summaryPeople"></span>
-        </div>
-        <div style="display: flex; align-items: center; gap: 8px;">
-            <i class="fas fa-chair" style="color: var(--primary-orange); width: 24px;"></i>
-            <span style="color: var(--gray);">Stolik:</span>
-            <span style="font-weight: 600; color: var(--dark); margin-left: auto;" id="summaryTable"></span>
-        </div>
-    </div>
-    <div style="height: 1px; background: #FFD2B3; margin: 12px 0;"></div>
-    <div style="display: flex; align-items: center; gap: 8px;">
-        <i class="fas fa-check-circle" style="color: #20b27f; width: 24px;"></i>
-        <span style="color: #20b27f; font-weight: 600;">Gotowe do rezerwacji!</span>
-    </div>
-</div>
-
-
-
 
         <div class="form-group">
-            <label class="form-label">Dodatkowe uwagi (opcjonalnie)</label>
-            <textarea class="form-control"
-                      id="reservationNotes"
-                      rows="3"
-                      placeholder="Np. alergie, okazja, preferowane miejsce..."></textarea>
+            <label class="form-label"><i class="fas fa-clock" style="color: var(--primary-orange); margin-right: 6px;"></i>Godzina</label>
+            <div class="time-slots">
+                <button class="time-slot" onclick="selectTime('17:00')">17:00</button>
+                <button class="time-slot" onclick="selectTime('17:30')">17:30</button>
+                <button class="time-slot" onclick="selectTime('18:00')">18:00</button>
+                <button class="time-slot" onclick="selectTime('18:30')">18:30</button>
+                <button class="time-slot" onclick="selectTime('19:00')">19:00</button>
+                <button class="time-slot" onclick="selectTime('19:30')">19:30</button>
+                <button class="time-slot" onclick="selectTime('20:00')">20:00</button>
+                <button class="time-slot" onclick="selectTime('20:30')">20:30</button>
+                <button class="time-slot" onclick="selectTime('21:00')">21:00</button>
+            </div>
+        </div>
+
+        <button class="btn-mobile btn-primary" onclick="goToStep2()">
+            Dalej: Wybór dań
+        </button>
+    </div>
+
+    <div id="step2Content" class="mobile-card" style="display: none;">
+        <h3 style="margin-bottom: 8px;">Dodaj dania do rezerwacji</h3>
+        <p style="color: #666; font-size: 13px; margin-bottom: 20px;">Możesz wybrać potrawy już teraz, aby skrócić czas oczekiwania w lokalu, lub pominąć ten krok klikając "Dalej".</p>
+
+        <div id="menuContainer" style="max-height: 380px; overflow-y: auto; margin-bottom: 16px; padding-right: 4px;">
+            {% if restaurant.menu_items %}
+                {# Grupowanie dań po kategoriach prosto z bazy przy użyciu filtrów Jinja2 #}
+                {% set categories = restaurant.menu_items | map(attribute='category') | unique | list %}
+                {% for cat in categories %}
+                    <h5 style="color: var(--primary-orange); margin-top: 18px; margin-bottom: 10px; border-bottom: 1px solid #eee; padding-bottom: 4px; font-weight: 600;">{{ cat }}</h5>
+                    {% for item in restaurant.menu_items if item.category == cat and item.available %}
+                        <div class="menu-item-card" data-id="{{ item.id }}" data-name="{{ item.name }}" onclick="toggleMenuItem(this)">
+                            <div style="flex: 1; padding-right: 12px;">
+                                <div style="font-weight: 600; color: #333; font-size: 14px;">{{ item.name }}</div>
+                                <div style="font-size: 12px; color: #777; line-height: 1.3; margin-top: 3px;">{{ item.description }}</div>
+                            </div>
+                            <div style="text-align: right; min-width: 80px;">
+                                <span style="font-weight: 700; color: var(--dark); font-size: 14px;">{{ "%.2f"|format(item.price) }} zł</span>
+                                <div class="badge-status" style="font-size: 11px; color: #20b27f; font-weight: bold; display: none; margin-top: 4px;"><i class="fas fa-check-circle"></i> Dodano</div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                {% endfor %}
+            {% else %}
+                <p style="text-align: center; color: #999; padding: 30px;">Karta dań tej restauracji jest obecnie pusta.</p>
+            {% endif %}
         </div>
 
         <div style="display: flex; gap: 12px; margin-top: 16px;">
-            <button class="btn-mobile btn-secondary" onclick="backToStep2()">
-                Wróć
+            <button class="btn-mobile btn-secondary" onclick="backToStep1()">Wróć</button>
+            <button class="btn-mobile btn-primary" onclick="goToStep3()">
+                Dalej: Wybór stolika
             </button>
+        </div>
+    </div>
+
+    <div id="step3Content" class="mobile-card" style="display: none;">
+        <h3 style="margin-bottom: 16px;">Wybierz stolik na planie sali</h3>
+        <div style="background: #FFF3E8; border-radius: 16px; padding: 16px 20px; margin-bottom: 16px;">
+            <div style="margin-bottom: 12px;">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <i class="fas fa-calendar-alt" style="color: var(--primary-orange); width: 24px;"></i>
+                    <span style="color: var(--gray);">Data i godzina:</span>
+                    <span style="font-weight: 600; color: var(--dark); margin-left: auto;" id="selectedDateTime">...</span>
+                </div>
+            </div>
+            <div style="display: flex; align-items: center; gap: 12px;">
+                <i class="fas fa-users" style="color: var(--primary-orange); width: 24px;"></i>
+                <span style="color: var(--gray);">Liczba osób:</span>
+                <span style="font-weight: 600; color: var(--dark); margin-left: auto;" id="selectedPeople">2</span>
+            </div>
+        </div>
+
+        <div class="canvas-container">
+            <canvas id="floorCanvas" width="600" height="400" style="width:100%; height:auto; max-width:600px; aspect-ratio:600/400"></canvas>
+        </div>
+
+        <div class="canvas-legend">
+            <div><span class="legend-dot free"></span><span class="legend-text">Wolny</span></div>
+            <div><span class="legend-dot occupied"></span><span class="legend-text">Zajęty</span></div>
+            <div><span class="legend-dot reserved"></span><span class="legend-text">Zarezerwowany</span></div>
+            <div><span class="legend-dot cleaning"></span><span class="legend-text">Sprzątanie</span></div>
+            <div><span class="legend-dot disabled"></span><span class="legend-text">Za mały</span></div>
+        </div>
+
+        <div id="selectedTableInfo" class="selected-table-info" style="display: none;">
+            Wybrany stolik: <strong id="selectedTableNumber">-</strong> (<span id="selectedTableSeats">-</span> miejsc)
+        </div>
+
+        <div id="noAvailableTableMsg" class="table-unavailable-message" style="display: none;">
+            <i class="fas fa-info-circle"></i> Brak wolnych stolików dla wybranej liczby osób
+        </div>
+
+        <div style="display: flex; gap: 12px; margin-top: 16px;">
+            <button class="btn-mobile btn-secondary" onclick="backToStep2()">Wróć</button>
+            <button class="btn-mobile btn-primary" id="nextToStep4Btn" onclick="goToStep4()" disabled style="opacity:0.5;">
+                Dalej: Podsumowanie
+            </button>
+        </div>
+    </div>
+
+    <div id="step4Content" class="mobile-card" style="display: none;">
+        <h3 style="margin-bottom: 16px;">Podsumowanie rezerwacji</h3>
+        <div style="background: #FFF3E8; border-radius: 16px; padding: 20px; margin-bottom: 20px;">
+            <div style="margin-bottom: 16px;">
+                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px;">
+                    <i class="fas fa-store" style="color: var(--primary-orange); width: 24px;"></i>
+                    <span style="color: var(--gray);">Restauracja:</span>
+                    <span style="font-weight: 600; color: var(--dark); margin-left: auto;">{{ restaurant.name }}</span>
+                </div>
+                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px;">
+                    <i class="fas fa-calendar-alt" style="color: var(--primary-orange); width: 24px;"></i>
+                    <span style="color: var(--gray);">Data i godzina:</span>
+                    <span style="font-weight: 600; color: var(--dark); margin-left: auto;" id="summaryDateTime"></span>
+                </div>
+                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px;">
+                    <i class="fas fa-users" style="color: var(--primary-orange); width: 24px;"></i>
+                    <span style="color: var(--gray);">Liczba osób:</span>
+                    <span style="font-weight: 600; color: var(--dark); margin-left: auto;" id="summaryPeople"></span>
+                </div>
+                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px;">
+                    <i class="fas fa-chair" style="color: var(--primary-orange); width: 24px;"></i>
+                    <span style="color: var(--gray);">Stolik:</span>
+                    <span style="font-weight: 600; color: var(--dark); margin-left: auto;" id="summaryTable"></span>
+                </div>
+
+                <div style="height: 1px; background: #FFD2B3; margin: 12px 0;"></div>
+                <div style="display: flex; flex-direction: column; gap: 6px;">
+                    <span style="color: var(--gray); font-size: 14px;"><i class="fas fa-utensils" style="color: var(--primary-orange); margin-right: 6px;"></i>Zamówione potrawy:</span>
+                    <ul id="summaryMenuList" style="padding-left: 20px; margin: 4px 0 0 0; font-weight: 600; color: var(--dark); font-size: 13px;">
+                        </ul>
+                </div>
+            </div>
+            <div style="height: 1px; background: #FFD2B3; margin: 12px 0;"></div>
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <i class="fas fa-check-circle" style="color: #20b27f; width: 24px;"></i>
+                <span style="color: #20b27f; font-weight: 600;">Gotowe do rezerwacji!</span>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">Dodatkowe uwagi (opcjonalnie)</label>
+            <textarea class="form-control" id="reservationNotes" rows="3" placeholder="Np. alergie, okazja, preferowane miejsce..."></textarea>
+        </div>
+
+        <div style="display: flex; gap: 12px; margin-top: 16px;">
+            <button class="btn-mobile btn-secondary" onclick="backToStep3()">Wróć</button>
             <button class="btn-mobile btn-success" onclick="submitReservation()">
                 <i class="fas fa-check-circle"></i> Potwierdź rezerwację
             </button>
@@ -484,7 +514,7 @@
 </div>
 
 <script>
-    // ========== CANVAS RYSOWANIE STOLIKÓW ==========
+// ========== CANVAS RYSOWANIE STOLIKÓW ==========
 let canvas, ctx;
 let tablesData = {{ tables | tojson | safe }};
 let selectedTableId = null;
@@ -498,21 +528,29 @@ const statusColors = {
     'cleaning': '#3498DB'
 };
 
+// Struktura danych rezerwacji (4 kroki)
+let reservationData = {
+    date: '',
+    time: '',
+    people: 2,
+    tableId: null,
+    tableNumber: '',
+    menuItemIds: [],       // ID dań przesyłane do bazy danych
+    menuItemNames: []      // Nazwy dań wyświetlane w podsumowaniu (Krok 4)
+};
+
 function initCanvas() {
     canvas = document.getElementById('floorCanvas');
     if (!canvas) return;
 
     ctx = canvas.getContext('2d');
 
-    // Ustaw rozmiar canvas
     const container = canvas.parentElement;
     const size = Math.min(container.clientWidth - 16, 600);
     canvas.width = size;
     canvas.height = size * (400/600);
 
     drawTables();
-
-    // Dodaj event kliknięcia
     canvas.addEventListener('click', handleCanvasClick);
 }
 
@@ -521,32 +559,30 @@ function drawTables() {
 
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    // Tło
-     ctx.fillStyle = '#f6f5f5';
-     ctx.fillRect(0, 0, canvas.width, canvas.height);
+    // Tło canvas
+    ctx.fillStyle = '#f6f5f5';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    // Skalowanie - dopasowanie do canvas
     const scaleX = canvas.width / 800;
     const scaleY = canvas.height / 600;
 
     tablesData.forEach(table => {
-        // 1. Warunek liczby miejsc (jeśli za mały -> szary)
         const meetsSeatsRequirement = table.seats >= peopleFilter;
 
-        let color = statusColors.free; // Domyślnie zielony (#27AE60)
+        let color = statusColors.free;
         let opacity = 0.7;
 
         if (!meetsSeatsRequirement) {
-            color = '#cccccc'; // SZARY - za mały stolik
+            color = '#cccccc'; // Za mały stolik
             opacity = 0.4;
         } else if (table.status === 'reserved') {
-            color = statusColors.reserved; // POMARAŃCZOWY (#F39C12) - zajęty przez rezerwację w tych godzinach
+            color = statusColors.reserved;
             opacity = 0.8;
         } else if (table.status === 'occupied') {
-            color = statusColors.occupied; // CZERWONY (#E74C3C) - zajęty na żywo przez kelnera
+            color = statusColors.occupied;
             opacity = 0.8;
         } else if (table.status === 'cleaning') {
-            color = statusColors.cleaning; // NIEBIESKI (#3498DB) - sprzątanie ustawione przez kelnera
+            color = statusColors.cleaning;
             opacity = 0.6;
         }
 
@@ -569,20 +605,17 @@ function drawTables() {
             ctx.arc(0, 0, radius, 0, Math.PI * 2);
             ctx.fill();
 
-            // Numer stolika
             ctx.fillStyle = '#333';
             ctx.globalAlpha = 1;
             ctx.font = `bold ${Math.max(12, 16 * Math.min(scaleX, scaleY))}px Arial`;
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
             ctx.fillText(table.number, 0, 0);
-
         } else {
             const width = (table.width || 100) * scaleX;
             const height = (table.height || 80) * scaleY;
             ctx.fillRect(-width/2, -height/2, width, height);
 
-            // Numer stolika
             ctx.fillStyle = '#333';
             ctx.globalAlpha = 1;
             ctx.font = `bold ${Math.max(12, 16 * Math.min(scaleX, scaleY))}px Arial`;
@@ -603,7 +636,6 @@ function handleCanvasClick(e) {
     let clickX = (e.clientX - rect.left) * scaleXcanvas;
     let clickY = (e.clientY - rect.top) * scaleYcanvas;
 
-    // Skala rysowania
     const drawScaleX = canvas.width / 800;
     const drawScaleY = canvas.height / 600;
 
@@ -639,33 +671,30 @@ function handleCanvasClick(e) {
         const isFree = clickedTable.status === 'free';
 
         if (meetsSeats && isFree) {
-            // Wybierz stolik
             selectedTableId = clickedTable.id;
             reservationData.tableId = clickedTable.id;
             reservationData.tableNumber = clickedTable.number;
 
-            // Pokaż info
             document.getElementById('selectedTableInfo').style.display = 'block';
             document.getElementById('selectedTableNumber').textContent = clickedTable.number;
             document.getElementById('selectedTableSeats').textContent = clickedTable.seats;
 
-            // Włącz przycisk dalej
-            const nextBtn = document.getElementById('nextToStep3Btn');
-            nextBtn.disabled = false;
-            nextBtn.style.opacity = '1';
+            // ZMIANA: Teraz aktywujemy przycisk przejścia do kroku 4 (Podsumowanie)
+            const nextBtn = document.getElementById('nextToStep4Btn');
+            if (nextBtn) {
+                nextBtn.disabled = false;
+                nextBtn.style.opacity = '1';
+            }
 
             showToast('success', `Wybrano stolik nr ${clickedTable.number}`);
         } else if (!meetsSeats) {
             showToast('warning', `Stolik ${clickedTable.number} ma tylko ${clickedTable.seats} miejsc`);
         } else if (!isFree) {
             let statusText = '';
-            if (clickedTable.status === 'reserved') {
-                statusText = 'już zarezerwowany na tę godzinę';
-            } else if (clickedTable.status === 'occupied') {
-                statusText = 'obecnie zajęty przez gości w lokalu';
-            } else if (clickedTable.status === 'cleaning') {
-                statusText = 'właśnie sprzątany i przygotowywany';
-            }
+            if (clickedTable.status === 'reserved') statusText = 'już zarezerwowany na tę godzinę';
+            else if (clickedTable.status === 'occupied') statusText = 'obecnie zajęty przez gości w lokalu';
+            else if (clickedTable.status === 'cleaning') statusText = 'właśnie sprzątany i przygotowywany';
+
             showToast('warning', `Stolik ${clickedTable.number} jest ${statusText}`);
         }
     }
@@ -673,61 +702,36 @@ function handleCanvasClick(e) {
     drawTables();
 }
 
-function updatePeopleFilter() {
-    peopleFilter = parseInt(document.getElementById('peopleCount').value);
-    reservationData.people = peopleFilter;
-    document.getElementById('selectedPeople').textContent = peopleFilter;
-
-    // Reset wyboru
-    selectedTableId = null;
-    reservationData.tableId = null;
-    reservationData.tableNumber = null;
-    document.getElementById('selectedTableInfo').style.display = 'none';
-
-    const nextBtn = document.getElementById('nextToStep3Btn');
-    nextBtn.disabled = true;
-    nextBtn.style.opacity = '0.5';
-
-    drawTables();
-
-    // Sprawdź czy jest jakiś wolny stolik
-    const hasAvailable = tablesData.some(t => t.status === 'free' && t.seats >= peopleFilter);
-    document.getElementById('noAvailableTableMsg').style.display = hasAvailable ? 'none' : 'block';
-}
-
-function showToast(type, message) {
-    const toast = document.createElement('div');
-    toast.className = `toast toast-${type}`;
-    toast.innerHTML = `<i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-circle'}"></i> ${message}`;
-    document.body.appendChild(toast);
-
-    // Automatyczne usunięcie po 2.5 sekundy
-    setTimeout(() => {
-        toast.style.opacity = '0';
-        toast.style.transition = 'opacity 0.3s';
-        setTimeout(() => toast.remove(), 300);
-    }, 2500);
-}
-let reservationData = {
-    date: '',
-    time: '',
-    people: 2,
-    tableId: null,
-    tableNumber: ''
-};
-
 function selectTime(time) {
-    // Remove selected class from all time slots
     document.querySelectorAll('.time-slot').forEach(slot => {
         slot.classList.remove('selected');
     });
-
-    // Add selected class to clicked slot
     event.target.classList.add('selected');
     reservationData.time = time;
 }
 
-async function goToStep2() {
+// ========== LOGIKA WYBORU DAŃ (KROK 2) ==========
+function toggleMenuItem(element) {
+    const itemId = parseInt(element.getAttribute('data-id'));
+    const itemName = element.getAttribute('data-name');
+    const badge = element.querySelector('.badge-status');
+
+    if (element.classList.contains('selected-item')) {
+        element.classList.remove('selected-item');
+        if (badge) badge.style.display = 'none';
+        reservationData.menuItemIds = reservationData.menuItemIds.filter(id => id !== itemId);
+        reservationData.menuItemNames = reservationData.menuItemNames.filter(name => name !== itemName);
+    } else {
+        element.classList.add('selected-item');
+        if (badge) badge.style.display = 'block';
+        reservationData.menuItemIds.push(itemId);
+        reservationData.menuItemNames.push(itemName);
+    }
+}
+
+// ========== NAWIGACJA MIĘDZY KROKAMI (1 -> 2 -> 3 -> 4) ==========
+
+function goToStep2() {
     reservationData.date = document.getElementById('reservationDate').value;
     reservationData.people = parseInt(document.getElementById('peopleCount').value);
     reservationData.time = document.querySelector('.time-slot.selected')?.textContent;
@@ -737,25 +741,31 @@ async function goToStep2() {
         return;
     }
 
-    // Aktualizuj filtr osób
     peopleFilter = reservationData.people;
 
+    // Przełącz widok na Krok 2 (Menu)
+    document.getElementById('step1Content').style.display = 'none';
+    document.getElementById('step2Content').style.display = 'block';
+
+    document.getElementById('step1').classList.remove('active');
+    document.getElementById('step2').classList.add('active');
+    updateStepColors();
+}
+
+async function goToStep3() {
+    // Przeniesione pobieranie zajętości stolików z bazy danych do tego kroku!
     try {
-        // 1. Pobieramy dynamiczną dostępność (rezerwacje) z backendu
         const response = await fetch(`{{ url_for('check_table_availability', restaurant_id=restaurant.id) }}?date=${reservationData.date}&time=${reservationData.time}`);
         const data = await response.json();
 
         if (data.success) {
             tablesData.forEach(table => {
-                // JEŻELI KELNER ustawił status na zajęty lub sprzątanie w bazie, zachowujemy go
                 if (table.status === 'occupied' || table.status === 'cleaning') {
-                    // Zostaje status przypisany przez kelnera (czerwony lub niebieski)
-                }
-                // W PRZECIWNYM WYPADKU sprawdzamy, czy wpada w grafik rezerwacji
-                else if (data.reserved_table_ids.includes(table.id)) {
-                    table.status = 'reserved'; // Pomarańczowy (Zarezerwowany)
+                    // Zachowujemy status przypisany przez obsługę
+                } else if (data.reserved_table_ids.includes(table.id)) {
+                    table.status = 'reserved';
                 } else {
-                    table.status = 'free';     // Zielony (Wolny)
+                    table.status = 'free';
                 }
             });
         }
@@ -763,28 +773,30 @@ async function goToStep2() {
         console.error("Błąd połączenia z serwerem:", error);
     }
 
-    // Update UI
-    document.getElementById('step1').classList.remove('active');
-    document.getElementById('step2').classList.add('active');
-    document.getElementById('step1Content').style.display = 'none';
-    document.getElementById('step2Content').style.display = 'block';
-
     document.getElementById('selectedDateTime').textContent = `${reservationData.date} ${reservationData.time}`;
     document.getElementById('selectedPeople').textContent = reservationData.people;
 
+    // Reset wybranego wcześniej stolika przy ponownym wchodzeniu
     selectedTableId = null;
     reservationData.tableId = null;
     reservationData.tableNumber = null;
-
     if(document.getElementById('selectedTableInfo')) {
         document.getElementById('selectedTableInfo').style.display = 'none';
     }
 
-    const nextBtn = document.getElementById('nextToStep3Btn');
+    const nextBtn = document.getElementById('nextToStep4Btn'); // powiązany z krokiem 4
     if(nextBtn) {
         nextBtn.disabled = true;
         nextBtn.style.opacity = '0.5';
     }
+
+    // Przełącz widok na Krok 3 (Stolik)
+    document.getElementById('step2Content').style.display = 'none';
+    document.getElementById('step3Content').style.display = 'block';
+
+    document.getElementById('step2').classList.remove('active');
+    document.getElementById('step3').classList.add('active');
+    updateStepColors();
 
     setTimeout(() => {
         initCanvas();
@@ -793,65 +805,76 @@ async function goToStep2() {
     }, 100);
 }
 
-function filterTables() {
-    document.querySelectorAll('.table-item').forEach(table => {
-        const seats = parseInt(table.getAttribute('data-seats'));
-        if (seats >= reservationData.people) {
-            table.classList.remove('unavailable');
-        } else {
-            table.classList.add('unavailable');
-        }
-    });
-}
-
-function selectTable(tableElement) {
-    if (tableElement.classList.contains('unavailable')) return;
-
-    // Remove selected class from all tables
-    document.querySelectorAll('.table-item').forEach(table => {
-        table.classList.remove('selected');
-    });
-
-    // Add selected class to clicked table
-    tableElement.classList.add('selected');
-
-    reservationData.tableId = tableElement.getAttribute('data-table-id');
-    reservationData.tableNumber = tableElement.querySelector('div').textContent;
-}
-
-function goToStep3() {
+function goToStep4() {
     if (!reservationData.tableId) {
         alert('Proszę wybrać stolik');
         return;
     }
 
-    // Update UI
-    document.getElementById('step2').classList.remove('active');
-    document.getElementById('step3').classList.add('active');
-    document.getElementById('step2Content').style.display = 'none';
-    document.getElementById('step3Content').style.display = 'block';
-
-    // Update summary
-    document.getElementById('summaryDateTime').textContent =
-        `${reservationData.date} ${reservationData.time}`;
+    // Uzupełnienie danych tekstowych w podsumowaniu
+    document.getElementById('summaryDateTime').textContent = `${reservationData.date} ${reservationData.time}`;
     document.getElementById('summaryPeople').textContent = `${reservationData.people} osoby`;
-    document.getElementById('summaryTable').textContent = reservationData.tableNumber;
+    document.getElementById('summaryTable').textContent = `Stolik nr ${reservationData.tableNumber}`;
+
+    // Dynamiczne wypisanie wybranych potraw w podsumowaniu
+    const menuListElement = document.getElementById('summaryMenuList');
+    if (menuListElement) {
+        menuListElement.innerHTML = '';
+        if (reservationData.menuItemNames.length > 0) {
+            reservationData.menuItemNames.forEach(name => {
+                const li = document.createElement('li');
+                li.textContent = name;
+                menuListElement.appendChild(li);
+            });
+        } else {
+            const li = document.createElement('li');
+            li.textContent = "Brak dań (zamówienie złożę na miejscu)";
+            li.style.color = "#888";
+            li.style.fontStyle = "italic";
+            li.style.listStyleType = "none";
+            menuListElement.appendChild(li);
+        }
+    }
+
+    // Przełącz widok na Krok 4 (Podsumowanie)
+    document.getElementById('step3Content').style.display = 'none';
+    document.getElementById('step4Content').style.display = 'block';
+
+    document.getElementById('step3').classList.remove('active');
+    document.getElementById('step4').classList.add('active');
+    updateStepColors();
 }
 
+// ========== FUNKCJE COFANIA (PRZYCISKI WRÓĆ) ==========
+
 function backToStep1() {
-    document.getElementById('step2').classList.remove('active');
-    document.getElementById('step1').classList.add('active');
     document.getElementById('step2Content').style.display = 'none';
     document.getElementById('step1Content').style.display = 'block';
+
+    document.getElementById('step2').classList.remove('active');
+    document.getElementById('step1').classList.add('active');
+    updateStepColors();
 }
 
 function backToStep2() {
-    document.getElementById('step3').classList.remove('active');
-    document.getElementById('step2').classList.add('active');
     document.getElementById('step3Content').style.display = 'none';
     document.getElementById('step2Content').style.display = 'block';
+
+    document.getElementById('step3').classList.remove('active');
+    document.getElementById('step2').classList.add('active');
+    updateStepColors();
 }
 
+function backToStep3() {
+    document.getElementById('step4Content').style.display = 'none';
+    document.getElementById('step3Content').style.display = 'block';
+
+    document.getElementById('step4').classList.remove('active');
+    document.getElementById('step3').classList.add('active');
+    updateStepColors();
+}
+
+// ========== ZAPIS REZERWACJI DO BAZY ==========
 async function submitReservation() {
     if (!reservationData.tableId) {
         alert('Proszę wybrać stolik');
@@ -875,8 +898,8 @@ async function submitReservation() {
         const data = await response.json();
 
         if (data.success) {
+            document.getElementById('step4').classList.add('completed'); // kolorowanie ostatniego kroku
             showToast('success', 'Rezerwacja wykonana! Za chwilę wrócisz do panelu.');
-            // Po 2 sekundach przekieruj na dashboard klienta
             setTimeout(() => {
                 window.location.href = "{{ url_for('client_dashboard') }}";
             }, 2000);
@@ -889,94 +912,57 @@ async function submitReservation() {
     }
 }
 
-function showSuccessModal(message) {
-    const modalHTML = `
-        <div class="modal-overlay active" onclick="closeModal()">
-            <div class="modal-content" onclick="event.stopPropagation()">
-                <div style="text-align: center; padding: 24px;">
-                    <div style="width: 80px; height: 80px; background: #d4edda; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px;">
-                        <i class="fas fa-check" style="font-size: 36px; color: #28a745;"></i>
-                    </div>
-                    <h3 style="margin-bottom: 8px;">Sukces!</h3>
-                    <p style="color: var(--gray); margin-bottom: 24px;">${message}</p>
-                    <div style="display: flex; gap: 12px;">
-                        <button class="btn-mobile btn-secondary" onclick="closeModal()">
-                            OK
-                        </button>
-                        <a href="{{ url_for('client_dashboard') }}" class="btn-mobile btn-primary">
-                            Przejdź do panelu
-                        </a>
-                    </div>
-                </div>
-            </div>
-        </div>
-    `;
+// ========== UTILS / TOASTS / STEPS INITIALIZE ==========
 
-    document.body.insertAdjacentHTML('beforeend', modalHTML);
+function showToast(type, message) {
+    const toast = document.createElement('div');
+    toast.className = `toast toast-${type}`;
+    toast.innerHTML = `<i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-circle'}"></i> ${message}`;
+    document.body.appendChild(toast);
+
+    setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transition = 'opacity 0.3s';
+        setTimeout(() => toast.remove(), 300);
+    }, 2500);
 }
 
-function closeModal() {
-    document.querySelector('.modal-overlay')?.remove();
+// Kompleksowa aktualizacja kolorów w nowym, 4-stopniowym systemie wizualnym
+function updateStepColors() {
+    const s1 = document.getElementById('step1');
+    const s2 = document.getElementById('step2');
+    const s3 = document.getElementById('step3');
+    const s4 = document.getElementById('step4');
+
+    // Krok 1 staje się zielony (completed), jeśli jesteś dalej niż na starcie
+    if (s2.classList.contains('active') || s3.classList.contains('active') || s4.classList.contains('active')) {
+        s1.classList.add('completed');
+    } else {
+        s1.classList.remove('completed');
+    }
+
+    // Krok 2 jest zielony, jeśli jesteś na stolikach lub podsumowaniu
+    if (s3.classList.contains('active') || s4.classList.contains('active')) {
+        s2.classList.add('completed');
+    } else {
+        s2.classList.remove('completed');
+    }
+
+    // Krok 3 jest zielony, tylko gdy jesteś na podsumowaniu
+    if (s4.classList.contains('active')) {
+        s3.classList.add('completed');
+    } else {
+        s3.classList.remove('completed');
+    }
 }
 
-// Initialize
 document.addEventListener('DOMContentLoaded', function() {
-    // Set today's date
     const today = new Date().toISOString().split('T')[0];
-    document.getElementById('reservationDate').value = today;
+    const dateInput = document.getElementById('reservationDate');
+    if(dateInput) {
+        dateInput.value = today;
+    }
     reservationData.date = today;
 });
-
-// Funkcja do aktualizacji kolorów kroków
-function updateStepColors() {
-    // Krok 1 – zielony jeśli przeszedłeś do kroku 2 lub 3
-    if (document.getElementById('step2').classList.contains('active') ||
-        document.getElementById('step3').classList.contains('active')) {
-        document.getElementById('step1').classList.add('completed');
-    } else {
-        document.getElementById('step1').classList.remove('completed');
-    }
-
-    // Krok 2 – zielony jeśli jesteś w kroku 3
-    if (document.getElementById('step3').classList.contains('active')) {
-        document.getElementById('step2').classList.add('completed');
-    } else {
-        document.getElementById('step2').classList.remove('completed');
-    }
-}
-
-// Nadpisz istniejące funkcje przejścia
-const originalGoToStep2 = goToStep2;
-const originalGoToStep3 = goToStep3;
-const originalBackToStep1 = backToStep1;
-const originalBackToStep2 = backToStep2;
-
-goToStep2 = function() {
-    originalGoToStep2();
-    updateStepColors();
-}
-
-goToStep3 = function() {
-    originalGoToStep3();
-    updateStepColors();
-}
-
-backToStep1 = function() {
-    originalBackToStep1();
-    updateStepColors();
-}
-
-backToStep2 = function() {
-    originalBackToStep2();
-    updateStepColors();
-}
-
-// Po udanej rezerwacji – krok 3 na zielony
-const originalSubmitReservation = submitReservation;
-submitReservation = async function() {
-    await originalSubmitReservation();
-    // Jeśli rezerwacja się udała (toast sukcesu) – krok 3 zielony
-    document.getElementById('step3').classList.add('completed');
-}
 </script>
 {% endblock %}

@@ -394,9 +394,16 @@ def submit_reservation(restaurant_id):
             status='confirmed'
         )
 
+        menu_item_ids = data.get('menuItemIds', [])  # Pobieramy tablicę ID z front-endu
+
+        if menu_item_ids:
+            # Wyciągamy z bazy tylko te dania, które pasują do przesłanych ID
+            selected_dishes = MenuItem.query.filter(MenuItem.id.in_(menu_item_ids)).all()
+            # Wykorzystujemy relację i metodę extend(), aby przypisać całą listę obiektów
+            reservation.menu_items.extend(selected_dishes)
+
         db.session.add(reservation)
         db.session.commit()
-
 
         return jsonify({
             'success': True,
