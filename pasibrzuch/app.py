@@ -579,13 +579,35 @@ def waiter_restaurant_view(restaurant_id):
         'cleaning': len([t for t in tables_data if t.status == 'cleaning'])
     }
 
+    upcoming_reservations_list = []
+    for res in todays_reservations:
+        res_start = datetime.combine(current_date, res.time)
+        res_end = res_start + timedelta(hours=2)
+
+        if now <= res_end:
+            table_number = res.table.number if res.table else "N/A"
+
+            upcoming_reservations_list.append({
+                'time': res.time.strftime('%H:%M'),
+                'name': res.user.name if res.user else "Anonim",
+                'table': table_number,
+                'people': res.people,
+                'notes': res.notes if res.notes else ""
+            })
+
+    # Sortujemy od najbliższej godziny
+    upcoming_reservations_list.sort(key=lambda x: x['time'])
+    upcoming_count = len(upcoming_reservations_list)
+
     return render_template('waiter/restaurant_view.html',
                            restaurant=restaurant,
                            tables=tables_data,
                            stats=stats,
                            current_date=datetime.now().strftime('%A, %d %B %Y'),
                            current_time=datetime.now().strftime('%H:%M'),
-                           assigned_restaurant=assigned_restaurant)
+                           assigned_restaurant=assigned_restaurant,
+                           upcoming_reservations=upcoming_reservations_list,
+                           upcoming_count=upcoming_count)
 
 
 @app.route('/waiter/table/<int:table_id>/update', methods=['POST'])
@@ -644,30 +666,77 @@ def save_floor_plan(restaurant_id):
         if user.restaurant_id != restaurant_id:
             return jsonify({'success': False, 'message': 'Brak dostępu do tej restauracji'})
 
-        for table_info in tables_data:
-            table = Table.query.get(table_info.get('id'))
-            if table and table.restaurant_id == restaurant_id:
-                # Aktualizuj tylko dozwolone pola
-                table.x = table_info.get('x', table.x)
-                table.y = table_info.get('y', table.y)
-                table.shape = table_info.get('shape', table.shape)
-                table.width = table_info.get('width', table.width)
-                table.height = table_info.get('height', table.height)
-                table.radius = table_info.get('radius', table.radius)
-                table.rotation = table_info.get('rotation', table.rotation)
-                table.number = table_info.get('number', table.number)
-                table.seats = table_info.get('seats', table.seats)
-                # Uwaga: status może być aktualizowany tylko przez osobny endpoint, ale tu też można
-                # jeśli chcemy, żeby zapis planu też zapisywał statusy:
-                if 'status' in table_info:
-                    table.status = table_info.get('status')
+        # 1. Pobierz wszystkie aktualne stoliki tej restauracji z bazy danych
+        existing_tables = Table.query.filter_by(restaurant_id=restaurant_id).all()
+        existing_tables_dict = {t.id: t for t in existing_tables}
 
+        # Zbieramy ID stolików, które przyszły z front-endu, żeby wiedzieć, które zachować
+        incoming_ids = []
+        for table_info in tables_data:
+            table_id = table_info.get('id')
+
+            # Konwertujemy współrzędne i wymiary na liczby całkowite (baza wymaga Integer)
+            x_val = int(round(float(table_info.get('x', 100))))
+            y_val = int(round(float(table_info.get('y', 100))))
+            width_val = int(round(float(table_info.get('width', 100)))) if table_info.get('width') else None
+            height_val = int(round(float(table_info.get('height', 80)))) if table_info.get('height') else None
+            radius_val = int(round(float(table_info.get('radius', 50)))) if table_info.get('radius') else None
+            rotation_val = int(round(float(table_info.get('rotation', 0))))
+
+            # Jeśli stolik ma wysokie ID bazy danych i w niej istnieje -> AKTUALIZUJEMY
+            if table_id in existing_tables_dict:
+                table = existing_tables_dict[table_id]
+                table.number = str(table_info.get('number', table.number))
+                table.seats = int(table_info.get('seats', table.seats))
+                table.status = table_info.get('status', table.status)
+                table.shape = table_info.get('shape', table.shape)
+                table.x = x_val
+                table.y = y_val
+                table.width = width_val
+                table.height = height_val
+                table.radius = radius_val
+                table.rotation = rotation_val
+                incoming_ids.append(table.id)  # zaznaczamy, że ten stolik zostaje
+
+            else:
+                # Jeśli ID nie ma w bazie (lub jest to tymczasowe ID typu 1, 2 z JS) -> DODAJEMY NOWY STOLIK
+                new_table = Table(
+                    restaurant_id=restaurant_id,
+                    number=str(table_info.get('number', 'X')),
+                    seats=int(table_info.get('seats', 4)),
+                    status=table_info.get('status', 'free'),
+                    shape=table_info.get('shape', 'rectangle'),
+                    x=x_val,
+                    y=y_val,
+                    width=width_val,
+                    height=height_val,
+                    radius=radius_val,
+                    rotation=rotation_val,
+                    location="Sala Główna"  # Wartość domyślna dla nowo utworzonych
+                )
+                db.session.add(new_table)
+
+        # 3. USUWANIE: Jeśli jakiś stolik jest w bazie, ale nie przyszedł w paczce z front-endu -> został skasowany
+        # Przed usunięciem sprawdzamy, czy nie ma przypisanych rezerwacji, aby zapobiec błędom klucza obcego
+        for ext_id, ext_table in existing_tables_dict.items():
+            if ext_id not in incoming_ids:
+                # Sprawdzamy czy stolik ma powiązane rezerwacje
+                has_reservations = Reservation.query.filter_by(table_id=ext_id).first()
+                if has_reservations:
+                    db.session.rollback()
+                    return jsonify({
+                        'success': False,
+                        'message': f'Nie można usunąć stolika nr {ext_table.number}, ponieważ ma przypisane rezerwacje!'
+                    })
+                db.session.delete(ext_table)
+
+        # Zapisujemy wszystkie operacje w bazie danych
         db.session.commit()
-        return jsonify({'success': True, 'message': 'Plan sali zapisany pomyślnie'})
+        return jsonify({'success': True, 'message': 'Plan sali został pomyślnie zsynchronizowany z bazą danych!'})
 
     except Exception as e:
         db.session.rollback()
-        return jsonify({'success': False, 'message': str(e)})
+        return jsonify({'success': False, 'message': f'Błąd bazy danych: {str(e)}'})
 
 @app.route('/waiter/notification', methods=['POST'])
 @login_required
@@ -741,6 +810,25 @@ def waiter_floor_plan(restaurant_id):
                            assigned_restaurant=assigned_restaurant,
                            current_date=datetime.now().strftime('%A, %d %B %Y'),
                            current_time=datetime.now().strftime('%H:%M'))
+
+@app.route('/waiter/reservations')
+@login_required
+def waiter_reservations():
+    """Zakładka z pełną listą rezerwacji (plik waiter/reservations.html)"""
+    if session.get('role') != 'waiter':
+        flash('Brak dostępu', 'danger')
+        return redirect(url_for('login'))
+
+    assigned_restaurant = get_assigned_restaurant(session['user_id'])
+    if not assigned_restaurant:
+        flash('Nie masz przypisanej restauracji', 'warning')
+        return redirect(url_for('login'))
+
+    # Renderuje pusty na razie szablon, który zaraz sobie utworzycie w projekcie
+    return render_template('waiter/reservations.html',
+                           restaurant=assigned_restaurant,
+                           assigned_restaurant=assigned_restaurant)
+
 # ========== PANEL MENADŻERA ==========
 @app.route('/manager/dashboard')
 @login_required

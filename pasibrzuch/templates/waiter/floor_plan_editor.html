@@ -1326,6 +1326,7 @@ async function saveLayout() {
 
         if (data.success) {
             showToast('success', data.message);
+            setTimeout(() => {window.location.reload()},1500);
         } else {
             showToast('error', data.message);
         }
