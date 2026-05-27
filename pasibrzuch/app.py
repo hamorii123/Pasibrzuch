@@ -19,11 +19,11 @@ def inject_now():
 def get_tables_for_restaurant(restaurant_id):
     return Table.query.filter_by(restaurant_id=restaurant_id).all()
 
-# Dane testowe dla koszyka
-sample_cart = [
-    #{'id': 1, 'name': 'Stek Wołowy z Grilla', 'price': 45.00, 'quantity': 1},
-    #{'id': 2, 'name': 'Zupa Pomidorowa', 'price': 12.00, 'quantity': 2}
-]
+# # Dane testowe dla koszyka
+# sample_cart = [
+#     #{'id': 1, 'name': 'Stek Wołowy z Grilla', 'price': 45.00, 'quantity': 1},
+#     #{'id': 2, 'name': 'Zupa Pomidorowa', 'price': 12.00, 'quantity': 2}
+# ]
 
 
 # Helper functions
@@ -200,23 +200,23 @@ def client_search():
                            query=query,
                            menu_items=filtered_menu_items)
 
-@app.route('/client/cart')
-@login_required
-def client_cart():
-    """Koszyk"""
-    if session.get('role') != 'client':
-        flash('Brak dostępu', 'danger')
-        return redirect(url_for('login'))
-
-    # W rzeczywistej aplikacji pobieralibyśmy koszyk z bazy danych
-    # Teraz używamy danych testowych
-    cart_items = sample_cart
-    total = sum(item['price'] * item['quantity'] for item in cart_items)
-
-    return render_template('client/cart_mobile.html',
-                           cart_items=cart_items,
-                           total=total)
-
+# @app.route('/client/cart')
+# @login_required
+# def client_cart():
+#     """Koszyk"""
+#     if session.get('role') != 'client':
+#         flash('Brak dostępu', 'danger')
+#         return redirect(url_for('login'))
+#
+#     # W rzeczywistej aplikacji pobieralibyśmy koszyk z bazy danych
+#     # Teraz używamy danych testowych
+#     cart_items = sample_cart
+#     total = sum(item['price'] * item['quantity'] for item in cart_items)
+#
+#     return render_template('client/cart_mobile.html',
+#                            cart_items=cart_items,
+#                            total=total)
+#
 
 @app.route('/client/profile')
 @login_required
@@ -456,20 +456,20 @@ def submit_order(restaurant_id):
         return jsonify({'success': False, 'message': str(e)})
 
 
-@app.route('/client/cart/add', methods=['POST'])
-@login_required
-def add_to_cart():
-    """Dodaj produkt do koszyka"""
-    if session.get('role') != 'client':
-        return jsonify({'success': False, 'message': 'Brak dostępu'})
-
-    try:
-        data = request.get_json()
-        # Tutaj logika dodawania do koszyka
-        return jsonify({'success': True, 'message': 'Produkt dodany do koszyka'})
-    except Exception as e:
-        return jsonify({'success': False, 'message': str(e)})
-
+# @app.route('/client/cart/add', methods=['POST'])
+# @login_required
+# def add_to_cart():
+#     """Dodaj produkt do koszyka"""
+#     if session.get('role') != 'client':
+#         return jsonify({'success': False, 'message': 'Brak dostępu'})
+#
+#     try:
+#         data = request.get_json()
+#         # Tutaj logika dodawania do koszyka
+#         return jsonify({'success': True, 'message': 'Produkt dodany do koszyka'})
+#     except Exception as e:
+#         return jsonify({'success': False, 'message': str(e)})
+#
 
 # ========== PANEL KELNERA ==========
 @app.route('/waiter/dashboard')
