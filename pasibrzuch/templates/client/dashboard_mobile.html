@@ -16,51 +16,52 @@
 }
 
 .stat-card {
-    background: var(--card);
+    background: white;
     border-radius: 12px;
     padding: 16px;
     text-align: center;
-    box-shadow: var(--shadow);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
 }
 
 .stat-number {
     font-size: 24px;
     font-weight: 700;
-    color: var(--primary);
+    color: #FF6B35;
     margin-bottom: 4px;
 }
 
 .stat-label {
     font-size: 12px;
-    color: var(--text-light);
+    color: #666;
+}
+
+.user-welcome {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 12px;
+    margin-bottom: 20px;
 }
 
 .dashboard-actions {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 12px;
-    margin: 20px 0;
-    max-width: 480px;
-    margin-left: auto;
-    margin-right: auto;
-}
-
-.user-welcome {
-    display: flex;
-    align-items: center;
-    gap: 16px;
-    margin-bottom: 20px;
+    margin: 20px auto 0 auto;
+    max-width: 400px;
+    width: 100%;
 }
 
 .user-avatar {
     width: 60px;
     height: 60px;
-    background: rgba(255, 107, 53, 0.1);  /* jasne pomarańczowe tło */
+    background: rgba(255, 107, 53, 0.1);
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
-    color: #FF6B35;  /* pomarańczowy kolor ikony */
+    color: #FF6B35;
     font-size: 24px;
 }
 
@@ -91,6 +92,8 @@
     align-items: center;
     justify-content: center;
     position: relative;
+    color: white;
+    font-size: 32px;
 }
 
 .restaurant-badge {
@@ -124,30 +127,78 @@
     font-size: 13px;
     color: #666;
 }
+
+/* ==========================================================================
+   NOWE STYLE DLA PANELU PC (Zdejmujemy blokadę 480px)
+   ========================================================================== */
+@media (min-width: 992px) {
+    .dashboard-container {
+        max-width: 1200px !important; /* Szeroki panel na PC */
+    }
+
+    .dashboard-stats, .dashboard-actions, .restaurant-grid-dashboard {
+        max-width: 100% !important; /* Rozciągamy elementy wewnątrz na 100% szerokości */
+    }
+
+    /* Na komputerze wyświetlamy aż 4 restauracje obok siebie w jednym rzędzie */
+    .restaurant-grid-dashboard {
+        grid-template-columns: repeat(4, 1fr) !important;
+        gap: 20px !important;
+    }
+
+    /* Trzy statystyki ładnie rozstrzelone */
+    .dashboard-stats {
+        grid-template-columns: repeat(3, 1fr) !important;
+        gap: 20px !important;
+    }
+
+    /* Przycisk szukaj i restauracje bardziej dopasowane na komputerze */
+    .dashboard-actions {
+        max-width: 400px !important;
+        margin-left: auto !important;  /* Wyrównanie do środka z lewej */
+        margin-right: auto !important; /* Wyrównanie do środka z prawej */
+
+    }
+    .dashboard-container .list {
+        flex-direction: row !important;
+        flex-wrap: wrap; /* W razie gdyby rezerwacji było bardzo dużo, przejdą do kolejnego rzędu */
+        gap: 20px !important;
+    }
+
+    /* Każda rezerwacja na PC dostaje elastyczną szerokość i równo się rozciąga */
+    .dashboard-container .list-item {
+        flex: 1 1 calc(33.333% - 20px); /* Maksymalnie 3 obok siebie w rzędzie */
+        min-width: 300px; /* Bezpieczna minimalna szerokość kart */
+        box-shadow: 0 4px 12px rgba(0,0,0,0.02);
+        border: 1px solid #eaeaea;
+        background: #ffffff !important; /* Na PC możemy dać białe tło dla lepszego kontrastu */
+    }
+}
 </style>
 {% endblock %}
 
 {% block content %}
-<!-- Welcome Card -->
-<div class="dashboard-container" style="max-width: 480px; margin: 0 auto; padding: 0 16px;">
-<div class="card">
+
+
+<div class="dashboard-container" style="padding: 0 16px; margin: 0 auto;">
+<div class="card" style="background: white; padding: 30px 20px; border-radius: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); margin-bottom: 20px; text-align: center;">
     <div class="user-welcome">
-        <div class="user-avatar">
+        <div class="user-avatar" style="margin: 0 auto;">
             <i class="fas fa-user"></i>
         </div>
         <div>
-            <h2 style="margin-bottom: 4px;">Witaj, {{ session.user_name }}! 👋</h2>
-            <p style="color: var(--text-light);">Gdzie dzisiaj coś zjemy?</p>
+            <h2 style="margin: 8px 0 4px 0; font-size: 24px;">Witaj, {{ session.user_name }}! 👋</h2>
+            <p style="color: #666; margin: 0; font-size: 16px;">Gdzie dzisiaj coś zjemy?</p>
         </div>
     </div>
 
     <div class="dashboard-actions">
-        <a href="{{ url_for('client_restaurants') }}" class="btn btn-primary">
-            <i class="fas fa-store"></i>
+        <a href="{{ url_for('client_restaurants') }}" class="btn btn-primary" style="display: block; text-align: center; background: #FF6B35; color: white; padding: 12px; border-radius: 8px; text-decoration: none; font-weight: 600;">
+            <i class="fas fa-store" style="margin-right: 6px;"></i>
             Restauracje
         </a>
-        <a href="{{ url_for('client_search') }}" class="btn btn-outline">
-            <i class="fas fa-search"></i>
+        <a href="{{ url_for('client_search') }}" class="btn btn-outline" style="display: block; text-align: center; border: 1px solid #FF6B35; color: #FF6B35; padding: 12px; border-radius: 8px; text-decoration: none; font-weight: 600;">
+            <i class="fas fa-search" style="margin-right: 6px;"></i>
             Szukaj
         </a>
     </div>
@@ -170,48 +221,99 @@
 </div>
 
 <!-- Active Reservations -->
-<div class="card">
+<div class="card" style="background: white; padding: 20px; border-radius: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); margin-bottom: 20px;">
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
         <h3 style="margin: 0;">Nadchodzące rezerwacje</h3>
-        <a href="#" style="color: var(--primary); text-decoration: none; font-size: 14px;">Wszystkie</a>
+        <a href="{{ url_for('client_profile') }}" style="color: #FF6B35; text-decoration: none; font-size: 14px; font-weight: 600;">Wszystkie</a>
     </div>
 
     {% if reservations and reservations|length > 0 %}
-    <div class="list">
+    <div class="list" style="display: flex; flex-direction: column; gap: 14px;">
         {% for res in reservations[:3] %}
-        <div class="list-item">
-            <div class="list-item-icon">
-                <i class="fas fa-calendar-check"></i>
-            </div>
-            <div class="list-item-content">
-                <div class="list-item-title">{{ res.restaurant_name }}</div>
-                <div class="list-item-subtitle">
-                    {{ res.date }} o {{ res.time }} • {{ res.people }} osoby
+        <div class="list-item" style="padding: 16px; background: #f8f9fa; border-radius: 12px; display: flex; flex-direction: column; justify-content: space-between;">
+            <div style="display: flex; gap: 14px; align-items: flex-start; width: 100%;">
+                <div class="list-item-icon" style="font-size: 24px; color: #FF6B35; background: rgba(255,107,53,0.1); width: 48px; height: 48px; display: flex; align-items: center; justify-content: center; border-radius: 10px; flex-shrink: 0;">
+                    <i class="fas fa-calendar-check"></i>
                 </div>
-                <div style="margin-top: 4px;">
-                    <span class="badge badge-success">{{ res.status }}</span>
+                <div class="list-item-content" style="flex: 1; min-width: 0;">
+
+                    <div class="list-item-title" style="font-weight: 600; font-size: 16px; margin-bottom: 6px; display: flex; justify-content: space-between; align-items: center; gap: 10px;">
+                        <span style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                            {% if res.restaurant and res.restaurant.name %}
+                                {{ res.restaurant.name }}
+                            {% else %}
+                                {{ res.restaurant_name|default('Restauracja') }}
+                            {% endif %}
+                        </span>
+                        <span style="color: #FF6B35; font-weight: 700; font-size: 15px; flex-shrink: 0;">
+                            {% if res.total_price and res.total_price > 0 %}
+                                {{ "%.2f"|format(res.total_price) }} zł
+                            {% else %}
+                                0.00 zł
+                            {% endif %}
+                        </span>
+                    </div>
+
+                    <div class="list-item-subtitle" style="font-size: 13px; color: #666; line-height: 1.5;">
+                        <div style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                            <i class="far fa-calendar-alt" style="color: #FF6B35; width: 16px;"></i>
+                            {{ res.date.strftime('%Y-%m-%d') if res.date and res.date.strftime else res.date }} o
+                            {{ res.time.strftime('%H:%M') if res.time and res.time.strftime else res.time }}
+                        </div>
+                        <div style="margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                            <i class="fas fa-chair" style="color: #FF6B35; width: 16px;"></i>
+                            Stolik nr <strong>{{ res.table.number if res.table and res.table.number else res.table_id|default('—') }}</strong> • {{ res.people }} os.
+                        </div>
+                    </div>
+
+                    {% if res.notes %}
+                        <div style="font-size: 12px; color: #888; margin: 8px 0 4px 0; background: #fff; padding: 6px 10px; border-radius: 6px; border-left: 3px solid #ccc; overflow: hidden; text-overflow: ellipsis;">
+                            <i class="far fa-comment-alt"></i> <em>"{{ res.notes }}"</em>
+                        </div>
+                    {% endif %}
+
+                    {% set preorder_items = res.items if res.items else res.reservation_items %}
+                    {% if preorder_items %}
+                        <div class="reservation-menu-items" style="background: white; border: 1px solid #eaeaea; border-radius: 8px; padding: 10px 12px; margin-top: 10px; font-size: 13px;">
+                            <strong style="font-size: 11px; text-transform: uppercase; color: #777; display: block; margin-bottom: 6px; letter-spacing: 0.5px;">Pre-order:</strong>
+                            <ul style="margin: 0; padding-left: 16px; list-style-type: square; color: #444;">
+                                {% for item in preorder_items %}
+                                    <li style="margin-bottom: 4px;">
+                                        {{ item.menu_item.name if item.menu_item else 'Danie' }}
+                                        <span style="color: #888;">(x{{ item.quantity }})</span>
+                                    </li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    {% endif %}
+
+                    <div style="margin-top: 10px;">
+                        <span class="status-badge {% if res.status == 'confirmed' or res.status == 'Potwierdzona' %}status-confirmed{% else %}status-pending{% endif %}">
+                            {% if res.status == 'confirmed' or res.status == 'Potwierdzona' %}Potwierdzona{% else %}{{ res.status|default('Oczekuje') }}{% endif %}
+                        </span>
+                    </div>
+
                 </div>
             </div>
         </div>
         {% endfor %}
     </div>
     {% else %}
-    <div class="empty-state">
-        <div class="empty-state-icon">
+    <div class="empty-state" style="text-align: center; padding: 30px 10px;">
+        <div class="empty-state-icon" style="font-size: 40px; color: #ccc; margin-bottom: 12px;">
             <i class="fas fa-calendar-times"></i>
         </div>
-        <h4 class="empty-state-title">Brak rezerwacji</h4>
-        <p class="empty-state-text">Zarezerwuj swój pierwszy stolik</p>
-        <a href="{{ url_for('client_restaurants') }}" class="btn btn-primary" style="margin-top: 16px;">
+        <h4 class="empty-state-title" style="margin: 0 0 6px 0; font-size: 16px;">Brak rezerwacji</h4>
+        <p class="empty-state-text" style="color: #888; font-size: 14px; margin: 0;">Zarezerwuj swój pierwszy stolik</p>
+        <a href="{{ url_for('client_restaurants') }}" class="btn btn-primary" style="display: inline-block; background: #FF6B35; color: white; padding: 10px 20px; border-radius: 8px; text-decoration: none; font-weight: 600; margin-top: 16px; font-size: 14px;">
             Zarezerwuj stolik
         </a>
     </div>
     {% endif %}
 </div>
-
 <!-- Recommended Restaurants -->
-<div class="card">
-    <h3 style="margin-bottom: 16px;">Polecane restauracje</h3>
+<div class="card" style="background: white; padding: 20px; border-radius: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); margin-bottom: 20px;">
+    <h3 style="margin-top: 0; margin-bottom: 16px;">Polecane restauracje</h3>
 
     <div class="restaurant-grid-dashboard">
         {% for restaurant in restaurants[:4] %}

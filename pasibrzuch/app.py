@@ -4,7 +4,7 @@ from datetime import datetime, timedelta, time
 import json
 from flask_migrate import Migrate
 from models import db, User, Restaurant, Table, Reservation, MenuItem, ReservationItem
-
+from sqlalchemy.orm import joinedload
 app = Flask(__name__)
 app.secret_key = 'pasibrzuch_mobile_2024_secret'
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///app.db'
@@ -124,15 +124,24 @@ def client_dashboard():
     if session.get('role') != 'client':
         flash('Brak dostępu', 'danger')
         return redirect(url_for('login'))
+
     restaurants = Restaurant.query.all()
-    reservations = Reservation.query.filter_by(user_id=session['user_id']).all()
+
+    # POPRAWKA: Pobieramy rezerwacje i od razu wymuszamy załadowanie relacji z bazy danych
+    reservations = Reservation.query.filter_by(user_id=session['user_id']) \
+        .options(
+        joinedload(Reservation.restaurant),
+        joinedload(Reservation.table),
+        joinedload(Reservation.items).joinedload(ReservationItem.menu_item)
+    ) \
+        .order_by(Reservation.date.asc(), Reservation.time.asc()) \
+        .all()
 
     return render_template(
         'client/dashboard_mobile.html',
         user_name=session['user_name'],
         restaurants=restaurants,
-        reservations=reservations,
-        #orders=[]
+        reservations=reservations
     )
 
 @app.route('/client/restaurants')

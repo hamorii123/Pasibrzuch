@@ -3,11 +3,15 @@
 {% block title %}Restauracje{% endblock %}
 
 {% block extra_css %}
+<style>
+/* ==========================================================================
+   STYLE WSPÓLNE / MOBILNE (Domyślne)
+   ========================================================================== */
 .search-container {
     position: sticky;
-    top: 60px;
-    background: transparent;
-    padding: 0 0 16px 0;
+    top: 10px;
+    background: white;
+    padding: 8px 0 16px 0;
     z-index: 10;
 }
 
@@ -15,6 +19,10 @@
     background: #f0f0f0;
     border: none;
     color: #333;
+    padding: 12px 16px;
+    border-radius: 8px;
+    width: 100%;
+    box-sizing: border-box;
 }
 
 .search-container .form-control::placeholder {
@@ -33,28 +41,39 @@
     overflow-x: auto;
     padding: 8px 0;
     margin-bottom: 16px;
+    -webkit-overflow-scrolling: touch;
+}
+
+.filters::-webkit-scrollbar {
+    display: none;
 }
 
 .filter-btn {
     padding: 8px 16px;
     border: 1px solid #ddd;
     border-radius: 20px;
-    background: var(--white);
+    background: white;
     white-space: nowrap;
     font-size: 14px;
+    cursor: pointer;
+    transition: all 0.2s;
 }
 
 .filter-btn.active {
-    background: var(--primary-orange);
-    color: var(--white);
-    border-color: var(--primary-orange);
+    background: #FF6B35 !important;
+    color: white !important;
+    border-color: #FF6B35 !important;
 }
 
+/* Upewniamy się, że domyślnie karty się wyświetlają */
 .restaurant-card {
-    display: block;
+    display: block !important;
     text-decoration: none;
     color: inherit;
-    margin-bottom: 16px;
+    margin-bottom: 24px;
+    background: white;
+    border-radius: 12px;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
 .restaurant-image {
@@ -68,18 +87,6 @@
     justify-content: center;
     color: white;
     font-size: 48px;
-}
-
-.restaurant-badge {
-    position: absolute;
-    top: 12px;
-    right: 12px;
-    background: var(--white);
-    padding: 4px 12px;
-    border-radius: 20px;
-    font-size: 12px;
-    font-weight: 600;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 
 body {
@@ -112,24 +119,64 @@ body {
     color: #007bff;
 }
 
-/* Kontener na tagi */
 .restaurant-tags {
     display: flex;
     flex-wrap: wrap;
     margin-top: 8px;
 }
+
+/* ==========================================================================
+   STYLE DESKTOP (Dla komputerów PC i laptopów)
+   ========================================================================== */
+@media (min-width: 992px) {
+    .search-container {
+        position: relative;
+        top: 0;
+        background: transparent;
+        padding-bottom: 24px;
+    }
+
+    #restaurantsList {
+        display: grid !important;
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 24px !important;
+    }
+
+    .restaurant-card {
+        margin-bottom: 0;
+        border: 1px solid #eee;
+        padding: 16px;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.02);
+    }
+
+    .restaurant-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+    }
+
+    .restaurant-image {
+        height: 200px;
+    }
+}
+
+@media (min-width: 1400px) {
+    #restaurantsList {
+        grid-template-columns: repeat(3, 1fr) !important;
+    }
+}
+</style>
 {% endblock %}
 
 {% block content %}
 <div class="mobile-container">
-<!-- Nagłówek wyśrodkowany -->
-<div style="margin-bottom: 20px; text-align: center;">
-    <h1 style="font-size: 24px; font-weight: 700; margin: 0 0 8px 0; color: var(--dark);">Restauracje</h1>
-    <div style="display: flex; align-items: center; justify-content: center; gap: 8px; color: var(--gray); font-size: 14px;">
-        <i class="fas fa-map-marker-alt" style="color: #20b27f; font-size: 14px;"></i>
-        <span>Szczecin - Centrum</span>
+    <!-- Nagłówek wyśrodkowany -->
+    <div style="margin-bottom: 20px; text-align: center;">
+        <h1 style="font-size: 26px; font-weight: 700; margin: 0 0 8px 0; color: #333;">Restauracje</h1>
+        <div style="display: flex; align-items: center; justify-content: center; gap: 8px; color: #666; font-size: 14px;">
+            <i class="fas fa-map-marker-alt" style="color: #20b27f; font-size: 14px;"></i>
+            <span>Szczecin - Centrum</span>
+        </div>
     </div>
-</div>
 
     <!-- Search Bar -->
     <div class="search-container">
@@ -143,15 +190,15 @@ body {
 
     <!-- Filters -->
     <div class="filters">
-        <button class="filter-btn active" onclick="filterByCuisine('all')">Wszystkie</button>
-        <button class="filter-btn" onclick="filterByCuisine('polska')">Polska</button>
-        <button class="filter-btn" onclick="filterByCuisine('włoska')">Włoska</button>
-        <button class="filter-btn" onclick="filterByCuisine('japońska')">Japońska</button>
-        <button class="filter-btn" onclick="filterByCuisine('szybkie')">Szybkie</button>
-        <button class="filter-btn" onclick="filterByCuisine('wege')">Wege</button>
+        <button class="filter-btn active" onclick="filterByCuisine('all', event)">Wszystkie</button>
+        <button class="filter-btn" onclick="filterByCuisine('polska', event)">Polska</button>
+        <button class="filter-btn" onclick="filterByCuisine('włoska', event)">Włoska</button>
+        <button class="filter-btn" onclick="filterByCuisine('japońska', event)">Japońska</button>
+        <button class="filter-btn" onclick="filterByCuisine('szybkie', event)">Szybkie</button>
+        <button class="filter-btn" onclick="filterByCuisine('wege', event)">Wege</button>
     </div>
 
-    <!-- Restaurants List -->
+    <!-- Restaurants Grid / List -->
     <div id="restaurantsList">
         {% for restaurant in restaurants %}
         <a href="{{ url_for('client_menu', restaurant_id=restaurant.id) }}"
@@ -160,29 +207,28 @@ body {
                 <div class="restaurant-image">
                     <i class="fas fa-utensils"></i>
                 </div>
-        
             </div>
 
             <div style="padding: 0 4px;">
                 <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 8px;">
-                    <h3 style="margin: 0; font-size: 18px;">{{ restaurant.name }}</h3>
+                    <h3 style="margin: 0; font-size: 18px; font-weight: 600;">{{ restaurant.name }}</h3>
                     <div style="color: #FF6B35; font-weight: 700;">
                         <i class="fas fa-star"></i> {{ restaurant.rating }}
                     </div>
                 </div>
                 <div class="restaurant-tags">
-    <span class="restaurant-tag tag-cuisine">
-        <i class="fas fa-utensil-spoon" style="margin-right: 4px; font-size: 10px;"></i> {{ restaurant.cuisine }}
-    </span>
-    <span class="restaurant-tag tag-hours">
-        <i class="fas fa-clock" style="margin-right: 4px; font-size: 10px;"></i> {{ restaurant.opening_hours }}
-    </span>
-    {% if restaurant.reservation %}
-    <span class="restaurant-tag tag-reservation">
-        <i class="fas fa-calendar-check" style="margin-right: 4px; font-size: 10px;"></i> Rezerwacja
-    </span>
-    {% endif %}
-</div>
+                    <span class="restaurant-tag tag-cuisine">
+                        <i class="fas fa-utensil-spoon" style="margin-right: 4px; font-size: 10px;"></i> {{ restaurant.cuisine }}
+                    </span>
+                    <span class="restaurant-tag tag-hours">
+                        <i class="fas fa-clock" style="margin-right: 4px; font-size: 10px;"></i> {{ restaurant.opening_hours }}
+                    </span>
+                    {% if restaurant.reservation %}
+                    <span class="restaurant-tag tag-reservation">
+                        <i class="fas fa-calendar-check" style="margin-right: 4px; font-size: 10px;"></i> Rezerwacja
+                    </span>
+                    {% endif %}
+                </div>
             </div>
         </a>
         {% endfor %}
@@ -202,29 +248,31 @@ function searchRestaurants(query) {
         const matchesFilter = activeFilter === 'all' || cuisine.includes(activeFilter);
 
         if (matchesSearch && matchesFilter) {
-            card.style.display = 'block';
+            card.style.setProperty('display', 'block', 'important');
         } else {
-            card.style.display = 'none';
+            card.style.setProperty('display', 'none', 'important');
         }
     });
 }
 
-function filterByCuisine(cuisine) {
+function filterByCuisine(cuisine, e) {
     activeFilter = cuisine;
 
-    // Update active filter button
+    // Aktualizacja aktywnego przycisku
     document.querySelectorAll('.filter-btn').forEach(btn => {
         btn.classList.remove('active');
     });
-    event.target.classList.add('active');
+    if (e && e.target) {
+        e.target.classList.add('active');
+    }
 
-    // Filter restaurants
+    // Filtrowanie kart
     allRestaurants.forEach(card => {
         const cardCuisine = card.getAttribute('data-cuisine');
         if (cuisine === 'all' || cardCuisine.includes(cuisine)) {
-            card.style.display = 'block';
+            card.style.setProperty('display', 'block', 'important');
         } else {
-            card.style.display = 'none';
+            card.style.setProperty('display', 'none', 'important');
         }
     });
 }

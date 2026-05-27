@@ -5,7 +5,7 @@
 {% block extra_css %}
 <style>
 .profile-container {
-    padding: 16px;
+    padding: 16px 0;
 }
 
 .profile-header {
@@ -110,13 +110,13 @@
 
 .profile-actions {
     display: flex;
-    justify-content: center;  /* wyśrodkowanie pojedynczego przycisku */
+    justify-content: center;
     gap: 12px;
     margin-top: 20px;
 }
 
 .action-btn {
-    padding: 12px 24px;  /* szerszy przycisk */
+    padding: 12px 24px;
     border: 1px solid #ddd;
     border-radius: 12px;
     background: white;
@@ -130,15 +130,32 @@
 
 .action-btn i {
     font-size: 18px;
-    margin-bottom: 0;  /* usuń margines */
+    margin-bottom: 0;
     color: #FF6B35;
 }
 
+/* Domyślny elastyczny kontener mobilny */
+.profile-wrapper {
+    width: 100%;
+    margin: 0 auto;
+    padding: 0 16px;
+    box-sizing: border-box;
+}
+
+/* ==========================================================================
+   NOWE STYLE DLA WERSJI DESKTOPOWEJ (Zdjęcie blokady mobilnej)
+   ========================================================================== */
+@media (min-width: 992px) {
+    .profile-wrapper {
+        max-width: 1200px !important; /* Rozwijamy profil szeroko na PC */
+    }
+}
 </style>
 {% endblock %}
 
 {% block content %}
-<div style="max-width: 480px; margin: 0 auto; padding: 0 16px;">
+<!-- Zastąpiono sztywne 480px elastyczną klasą profile-wrapper -->
+<div class="profile-wrapper">
 <div class="profile-container">
     <!-- Nagłówek profilu -->
     <div class="profile-header">
@@ -156,106 +173,104 @@
         </div>
     </div>
 
-        <!-- Statystyki -->
-<div class="profile-section">
-    <h3>Twoja aktywność</h3>
-    <div style="display: flex; justify-content: space-around; text-align: center; padding: 10px 0;">
-        <div>
-            <div style="font-size: 28px; font-weight: 700; color: #FF6B35;">{{ reservations|length }}</div>
-            <div style="font-size: 12px; color: #666;">Rezerwacje</div>
-        </div>
-        <div>
-            <div style="font-size: 28px; font-weight: 700; color: #FF6B35;">{{ restaurants|length }}</div>
-            <div style="font-size: 12px; color: #666;">Odwiedzone</div>
-        </div>
-        <div>
-            <div style="font-size: 28px; font-weight: 700; color: #FF6B35;">4.8</div>
-            <div style="font-size: 12px; color: #666;">Średnia ocena</div>
+    <!-- Statystyki -->
+    <div class="profile-section">
+        <h3>Twoja aktywność</h3>
+        <div style="display: flex; justify-content: space-around; text-align: center; padding: 10px 0;">
+            <div>
+                <div style="font-size: 28px; font-weight: 700; color: #FF6B35;">{{ reservations|length }}</div>
+                <div style="font-size: 12px; color: #666;">Rezerwacje</div>
+            </div>
+            <div>
+                <div style="font-size: 28px; font-weight: 700; color: #FF6B35;">{{ restaurants|length }}</div>
+                <div style="font-size: 12px; color: #666;">Odwiedzone</div>
+            </div>
+            <div>
+                <div style="font-size: 28px; font-weight: 700; color: #FF6B35;">4.8</div>
+                <div style="font-size: 12px; color: #666;">Średnia ocena</div>
+            </div>
         </div>
     </div>
-</div>
 
     <!-- Rezerwacje -->
     <div class="profile-section">
-            <h3>
-                Twoje rezerwacje i zamówienia
-                <a href="#" class="section-link">Wszystkie</a>
-            </h3>
+        <h3>
+            Twoje rezerwacje i zamówienia
+<!--            <a href="#" class="section-link">Wszystkie</a>-->
+        </h3>
 
-            {% if reservations %}
-                {% for res in reservations %}
-                <div class="reservation-item" style="padding-bottom: 16px; margin-bottom: 16px; border-bottom: 1px solid #eee;">
-                    <div class="reservation-title" style="font-size: 16px; display: flex; justify-content: space-between; align-items: center;">
-                        <span>{{ res.restaurant.name }}</span>
-                        <span style="color: #FF6B35; font-weight: 700;">
-                            {% if res.total_price > 0 %}
-                                {{ "%.2f"|format(res.total_price) }} zł
-                            {% else %}
-                                0.00 zł
-                            {% endif %}
-                        </span>
+        {% if reservations %}
+            {% for res in reservations %}
+            <div class="reservation-item" style="padding-bottom: 16px; margin-bottom: 16px; border-bottom: 1px solid #eee;">
+                <div class="reservation-title" style="font-size: 16px; display: flex; justify-content: space-between; align-items: center;">
+                    <span>{{ res.restaurant.name }}</span>
+                    <span style="color: #FF6B35; font-weight: 700;">
+                        {% if res.total_price > 0 %}
+                            {{ "%.2f"|format(res.total_price) }} zł
+                        {% else %}
+                            0.00 zł
+                        {% endif %}
+                    </span>
+                </div>
+
+                <div class="reservation-details" style="margin-top: 4px; color: #666; font-size: 13px;">
+                    <div>
+                        <i class="far fa-calendar-alt"></i> {{ res.date.strftime('%Y-%m-%d') if res.date.strftime else res.date }} o {{ res.time.strftime('%H:%M') if res.time.strftime else res.time }}
                     </div>
-
-                    <div class="reservation-details" style="margin-top: 4px; color: #666; font-size: 13px;">
-                        <div>
-                            <i class="far fa-calendar-alt"></i> {{ res.date.strftime('%Y-%m-%d') if res.date.strftime else res.date }} o {{ res.time.strftime('%H:%M') if res.time.strftime else res.time }}
-                        </div>
-                        <div style="margin-top: 2px;">
-                            <i class="fas fa-chair"></i> Stolik nr <strong>{{ res.table.number }}</strong> • {{ res.people }} os.
-                        </div>
-                    </div>
-
-                    {% if res.notes %}
-                        <div style="font-size: 12px; color: #888; margin: 6px 0 2px 0;">
-                            <i class="far fa-comment-alt"></i> <em>"{{ res.notes }}"</em>
-                        </div>
-                    {% endif %}
-
-                    {% if res.items %}
-                        <div class="reservation-menu-items" style="background: #f9f9f9; border-radius: 8px; padding: 8px 12px; margin-top: 8px; font-size: 13px;">
-                            <strong style="font-size: 11px; text-transform: uppercase; color: #777; display: block; margin-bottom: 4px;">Szczegóły zamówienia pre-order:</strong>
-                            <ul style="margin: 0; padding-left: 16px; list-style-type: square;">
-                                {% for item in res.items %}
-                                    <li style="margin-bottom: 2px;">
-                                        {{ item.menu_item.name }}
-                                        <span style="color: #888;">(x{{ item.quantity }})</span>
-                                        — <span style="font-weight: 500;">{{ "%.2f"|format(item.quantity * item.menu_item.price) }} zł</span>
-                                    </li>
-                                {% endfor %}
-                            </ul>
-                        </div>
-                    {% endif %}
-
-                    <div style="margin-top: 8px;">
-                        <span class="status-badge {% if res.status == 'confirmed' %}status-confirmed{% else %}status-pending{% endif %}">
-                            {% if res.status == 'confirmed' %}Potwierdzona{% else %}Oczekuje{% endif %}
-                        </span>
+                    <div style="margin-top: 2px;">
+                        <i class="fas fa-chair"></i> Stolik nr <strong>{{ res.table.number }}</strong> • {{ res.people }} os.
                     </div>
                 </div>
-                {% endfor %}
-            {% else %}
-                <p style="color: #999; text-align: center; padding: 20px 0;">Brak historii rezerwacji.</p>
-            {% endif %}
-        </div>
 
+                {% if res.notes %}
+                    <div style="font-size: 12px; color: #888; margin: 6px 0 2px 0;">
+                        <i class="far fa-comment-alt"></i> <em>"{{ res.notes }}"</em>
+                    </div>
+                {% endif %}
 
+                {% if res.items %}
+                    <div class="reservation-menu-items" style="background: #f9f9f9; border-radius: 8px; padding: 8px 12px; margin-top: 8px; font-size: 13px;">
+                        <strong style="font-size: 11px; text-transform: uppercase; color: #777; display: block; margin-bottom: 4px;">Szczegóły zamówienia pre-order:</strong>
+                        <ul style="margin: 0; padding-left: 16px; list-style-type: square;">
+                            {% for item in res.items %}
+                                <li style="margin-bottom: 2px;">
+                                    {{ item.menu_item.name }}
+                                    <span style="color: #888;">(x{{ item.quantity }})</span>
+                                    — <span style="font-weight: 500;">{{ "%.2f"|format(item.quantity * item.menu_item.price) }} zł</span>
+                                </li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                {% endif %}
+
+                <div style="margin-top: 8px;">
+                    <span class="status-badge {% if res.status == 'confirmed' %}status-confirmed{% else %}status-pending{% endif %}">
+                        {% if res.status == 'confirmed' %}Potwierdzona{% else %}Oczekuje{% endif %}
+                    </span>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <p style="color: #999; text-align: center; padding: 20px 0;">Brak historii rezerwacji.</p>
+        {% endif %}
+    </div>
 
     <!-- Polecane -->
-<div class="profile-section">
-    <h3>Polecamy dziś</h3>
-    <div style="display: flex; align-items: center; gap: 16px;">
-        <div style="width: 60px; height: 60px; background: linear-gradient(135deg, #FF6B35, #FF8C42); border-radius: 12px; display: flex; align-items: center; justify-content: center;">
-            <i class="fas fa-utensils" style="color: white; font-size: 24px;"></i>
+    <div class="profile-section">
+        <h3>Polecamy dziś</h3>
+        <div style="display: flex; align-items: center; gap: 16px;">
+            <div style="width: 60px; height: 60px; background: linear-gradient(135deg, #FF6B35, #FF8C42); border-radius: 12px; display: flex; align-items: center; justify-content: center;">
+                <i class="fas fa-utensils" style="color: white; font-size: 24px;"></i>
+            </div>
+            <div>
+                <div style="font-weight: 600; margin-bottom: 4px;">13 Muz</div>
+                <div style="font-size: 12px; color: #666;">Kuchnia polska • Średnia 4.7</div>
+            </div>
+            <a href="{{ url_for('client_menu', restaurant_id=1) }}" style="margin-left: auto; color: #FF6B35; text-decoration: none; font-weight: 600;">
+                Sprawdź →
+            </a>
         </div>
-        <div>
-            <div style="font-weight: 600; margin-bottom: 4px;">13 Muz</div>
-            <div style="font-size: 12px; color: #666;">Kuchnia polska • Średnia 4.7</div>
-        </div>
-        <a href="{{ url_for('client_menu', restaurant_id=1) }}" style="margin-left: auto; color: #FF6B35;">
-            Sprawdź →
-        </a>
     </div>
-</div>
 
     <!-- Ustawienia -->
     <div class="profile-section">

@@ -8,143 +8,293 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/mobile.css') }}">
     <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
     <meta name="theme-color" content="#FF6B35">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
     <style>
-/* Nadpisanie domyślnych stylów headera */
-.header {
-    background: linear-gradient(135deg, #FF6B35, #E55A2B) !important;
-    height: 100px !important;
-    padding: 0 20px !important;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.1) !important;
-    position: fixed !important;
-    top: 0 !important;
-    left: 0 !important;
-    right: 0 !important;
-    z-index: 1000 !important;
-}
+        :root {
+            --primary-orange: #FF6B35;
+            --gradient-orange: linear-gradient(135deg, #FF6B35, #E55A2B);
+            --dark-gray: #333333;
+            --light-bg: #f8f9fa;
+        }
 
-.header-title {
-    display: flex;
-    align-items: center;
-}
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: var(--light-bg);
+            color: var(--dark-gray);
+        }
 
-.header-btn {
-    color: white !important;
-    font-size: 26px !important;
-}
+        /* ==========================================================================
+           WSPÓLNE STYLE DLA TOASTÓW
+           ========================================================================== */
+        .toast {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #333;
+            color: white;
+            padding: 12px 24px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            z-index: 2000;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
 
-.header-btn:active {
-    background: rgba(255,255,255,0.2) !important;
-    border-radius: 50%;
-}
+        /* ==========================================================================
+           STYLIZACJA WERSJI MOBILNEJ (Domyślna - Mobile First)
+           ========================================================================== */
+        @media (max-width: 991.98px) {
+            .desktop-sidebar {
+                display: none !important;
+            }
 
-/* DOSTOSOWANIE MAIN - ważne żeby treść nie nachodziła na header */
-.main {
-    padding-top: 120px !important;
-}
+            .header {
+                background: var(--gradient-orange) !important;
+                height: 100px !important;
+                padding: 0 20px !important;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.1) !important;
+                position: fixed !important;
+                top: 0 !important;
+                left: 0 !important;
+                right: 0 !important;
+                z-index: 1000 !important;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+            }
 
-/* Bottom navigation pozostaje bez zmian */
-.bottom-nav {
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
-}
+            .main {
+                padding: 120px 16px 100px 16px !important;
+            }
 
-/* Dolny pasek nawigacji - pomarańczowy, białe ikony i napisy */
-.bottom-nav {
-    background: linear-gradient(135deg, #FF6B35, #E55A2B) !important;
-    border-top: none !important;
-}
+            .bottom-nav {
+                position: fixed;
+                bottom: 0;
+                left: 0;
+                right: 0;
+                background: var(--gradient-orange) !important;
+                display: flex;
+                justify-content: space-around;
+                align-items: center;
+                height: 65px;
+                z-index: 1000;
+                box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+            }
 
-.bottom-nav-item {
-    color: rgba(255, 255, 255, 0.7) !important;
-}
+            .bottom-nav-item {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                color: rgba(255, 255, 255, 0.7) !important;
+                text-decoration: none;
+                font-size: 11px;
+            }
 
-.bottom-nav-item.active {
-    color: white !important;
-}
+            .bottom-nav-item i {
+                font-size: 20px;
+                margin-bottom: 3px;
+            }
 
-.bottom-nav-icon, .bottom-nav-label {
-    color: inherit !important;
-}
-        {% block extra_css %}{% endblock %}
+            .bottom-nav-item.active {
+                color: white !important;
+                font-weight: bold;
+            }
+        }
+
+        /* ==========================================================================
+           STYLIZACJA WERSJI DESKTOPOWEJ (Ekrany komputerów)
+           ========================================================================== */
+        @media (min-width: 992px) {
+            .mobile-header, .bottom-nav {
+                display: none !important;
+            }
+
+            body {
+                display: flex;
+                background-color: #f0f2f5;
+            }
+
+            /* Lewy panel nawigacyjny stały na ekranie */
+            .desktop-sidebar {
+                width: 280px;
+                height: 100vh;
+                background: var(--gradient-orange);
+                position: fixed;
+                top: 0;
+                left: 0;
+                display: flex;
+                flex-direction: column;
+                box-shadow: 4px 0 15px rgba(0,0,0,0.1);
+                z-index: 1000;
+            }
+
+            .sidebar-logo-container {
+                padding: 30px 20px;
+                display: flex;
+                justify-content: center;
+                border-bottom: 1px solid rgba(255,255,255,0.1);
+            }
+
+            .sidebar-logo-bg {
+                background: white;
+                border-radius: 50%;
+                width: 100px;
+                height: 100px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+            }
+
+            .sidebar-menu {
+                padding: 20px 0;
+                flex: 1;
+            }
+
+            .sidebar-link {
+                display: flex;
+                align-items: center;
+                padding: 14px 25px;
+                color: rgba(255,255,255,0.8);
+                text-decoration: none;
+                font-size: 16px;
+                font-weight: 500;
+                transition: all 0.2s ease;
+                margin: 4px 15px;
+                border-radius: 8px;
+            }
+
+            .sidebar-link i {
+                font-size: 20px;
+                width: 35px;
+            }
+
+            .sidebar-link:hover {
+                background: rgba(255,255,255,0.15);
+                color: white;
+            }
+
+            .sidebar-link.active {
+                background: white;
+                color: var(--primary-orange);
+                box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+                font-weight: 600;
+            }
+
+            .sidebar-footer {
+                padding: 20px;
+                border-top: 1px solid rgba(255,255,255,0.1);
+            }
+
+            /* Główny kontener na treść na komputerze */
+            .main {
+                margin-left: 280px;
+                flex: 1;
+                padding: 40px;
+                min-height: 100vh;
+                box-sizing: border-box;
+                display: flex;
+                justify-content: center;
+            }
+
+            /* Wygładzenie i ograniczenie szerokości podstron, żeby nie były rozciągnięte */
+            .mobile-container, .container {
+                width: 100%;
+                max-width: 1100px;
+                margin: 0 auto;
+            }
+        }
     </style>
+    {% block extra_css %}{% endblock %}
 </head>
 <body>
-<!-- Header - grubszy, z większym logiem -->
-<header class="header safe-area-top" style="background: linear-gradient(135deg, #FF6B35, #E55A2B); height: 120px; padding: 0 20px;">
-    <div class="header-title">
-        <div style="background: white; border-radius: 50%; width: 85px; height: 85px; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 8px rgba(0,0,0,0.15);">
-            <img src="{{ url_for('static', filename='images/logo.png') }}" alt="ResNow" style="height: 80px;">
+
+    <nav class="desktop-sidebar">
+        <div class="sidebar-logo-container">
+            <div class="sidebar-logo-bg">
+                <img src="{{ url_for('static', filename='images/logo.png') }}" alt="ResNow" style="height: 90px;">
+            </div>
         </div>
-    </div>
-    <div class="header-actions" style="gap: 20px;">
-        <button class="header-btn" onclick="toggleNotifications()" style="color: white; font-size: 26px;">
-            <i class="fas fa-bell"></i>
-            <span class="badge" id="notificationBadge" style="display: none;">3</span>
-        </button>
-        <a href="{{ url_for('client_profile') }}" class="header-btn" style="color: white; font-size: 26px;">
-            <i class="fas fa-user"></i>
-        </a>
-    </div>
-</header>
 
-    <!-- Main Content -->
-    <main class="main safe-area-bottom">
-        {% with messages = get_flashed_messages(with_categories=true) %}
-            {% if messages %}
-                {% for category, message in messages %}
-                    <div class="toast">
-                        <i class="fas fa-{% if category == 'success' %}check-circle{% else %}exclamation-circle{% endif %}"></i>
-                        {{ message }}
-                    </div>
-                {% endfor %}
-            {% endif %}
-        {% endwith %}
+        <div class="sidebar-menu">
+            <a href="{{ url_for('client_dashboard') }}" class="sidebar-link {% if request.endpoint == 'client_dashboard' %}active{% endif %}">
+                <i class="fas fa-home"></i> Panel Główny
+            </a>
+            <a href="{{ url_for('client_restaurants') }}" class="sidebar-link {% if request.endpoint == 'client_restaurants' %}active{% endif %}">
+                <i class="fas fa-store"></i> Restauracje
+            </a>
+            <a href="{{ url_for('client_search') }}" class="sidebar-link {% if request.endpoint == 'client_search' %}active{% endif %}">
+                <i class="fas fa-search"></i> Wyszukiwarka
+            </a>
+            <a href="{{ url_for('client_profile') }}" class="sidebar-link {% if request.endpoint == 'client_profile' %}active{% endif %}">
+                <i class="fas fa-user"></i> Mój Profil
+            </a>
+        </div>
 
-        {% block content %}{% endblock %}
+        <div class="sidebar-footer">
+            <a href="{{ url_for('logout') }}" class="sidebar-link" style="margin: 0; background: rgba(0,0,0,0.1);">
+                <i class="fas fa-sign-out-alt"></i> Wyloguj się
+            </a>
+        </div>
+    </nav>
+
+
+    <header class="header mobile-header" style="background: linear-gradient(135deg, #FF6B35, #E55A2B); height: 120px; padding: 0 20px;">
+        <div class="header-title">
+            <div style="background: white; border-radius: 50%; width: 85px; height: 85px; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 8px rgba(0,0,0,0.15);">
+                <img src="{{ url_for('static', filename='images/logo.png') }}" alt="ResNow" style="height: 80px;">
+            </div>
+        </div>
+        <div class="header-actions" style="display: flex; gap: 20px; align-items: center;">
+            <a href="{{ url_for('client_profile') }}" style="color: white; font-size: 26px;">
+                <i class="fas fa-user"></i>
+            </a>
+        </div>
+    </header>
+
+
+    <main class="main">
+        <div style="width: 100%;">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="toast">
+                            <i class="fas fa-{% if category == 'success' %}check-circle{% else %}exclamation-circle{% endif %}"></i>
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+
+            {% block content %}{% endblock %}
+        </div>
     </main>
 
-    <!-- Fixed Bottom Navigation -->
+
     <nav class="bottom-nav">
-        <a href="{{ url_for('client_dashboard') }}"
-           class="bottom-nav-item {% if request.endpoint == 'client_dashboard' %}active{% endif %}"
-           id="navHome">
-            <i class="fas fa-home bottom-nav-icon"></i>
-            <span class="bottom-nav-label">Start</span>
+        <a href="{{ url_for('client_dashboard') }}" class="bottom-nav-item {% if request.endpoint == 'client_dashboard' %}active{% endif %}">
+            <i class="fas fa-home"></i>
+            <span>Start</span>
         </a>
-        <a href="{{ url_for('client_restaurants') }}"
-           class="bottom-nav-item {% if request.endpoint == 'client_restaurants' %}active{% endif %}"
-           id="navRestaurants">
-            <i class="fas fa-store bottom-nav-icon"></i>
-            <span class="bottom-nav-label">Restauracje</span>
+        <a href="{{ url_for('client_restaurants') }}" class="bottom-nav-item {% if request.endpoint == 'client_restaurants' %}active{% endif %}">
+            <i class="fas fa-store"></i>
+            <span>Restauracje</span>
         </a>
-        <a href="{{ url_for('client_search') }}"
-           class="bottom-nav-item {% if request.endpoint == 'client_search' %}active{% endif %}"
-           id="navSearch">
-            <i class="fas fa-search bottom-nav-icon"></i>
-            <span class="bottom-nav-label">Szukaj</span>
+        <a href="{{ url_for('client_search') }}" class="bottom-nav-item {% if request.endpoint == 'client_search' %}active{% endif %}">
+            <i class="fas fa-search"></i>
+            <span>Szukaj</span>
         </a>
-        <a href="{{ url_for('client_profile') }}"
-           class="bottom-nav-item {% if request.endpoint == 'client_profile' %}active{% endif %}"
-           id="navProfile">
-            <i class="fas fa-user bottom-nav-icon"></i>
-            <span class="bottom-nav-label">Profil</span>
+        <a href="{{ url_for('client_profile') }}" class="bottom-nav-item {% if request.endpoint == 'client_profile' %}active{% endif %}">
+            <i class="fas fa-user"></i>
+            <span>Profil</span>
         </a>
     </nav>
 
-    <!-- JavaScript -->
     <script>
-        // Service Worker for PWA
-        if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('/static/js/sw.js')
-                .then(() => console.log('Service Worker Registered'))
-                .catch(err => console.log('Service Worker Error:', err));
-        }
-
-        // Toast auto-hide
+        // Automatyczne ukrywanie powiadomień systemowych (Toast)
         setTimeout(() => {
             const toasts = document.querySelectorAll('.toast');
             toasts.forEach(toast => {
@@ -153,67 +303,7 @@
                 setTimeout(() => toast.remove(), 300);
             });
         }, 3000);
-
-        function toggleNotifications() {
-            // Tutaj możesz dodać modal z powiadomieniami
-            const badge = document.getElementById('notificationBadge');
-            if (badge.style.display === 'none') {
-                badge.style.display = 'inline-flex';
-            } else {
-                badge.style.display = 'none';
-            }
-        }
-
-        // Update cart badge from localStorage
-        function updateCartBadge() {
-            let totalItems = 0;
-            for (let i = 0; i < localStorage.length; i++) {
-                const key = localStorage.key(i);
-                if (key.startsWith('cart_')) {
-                    try {
-                        const cart = JSON.parse(localStorage.getItem(key) || '[]');
-                        totalItems += cart.reduce((sum, item) => sum + item.quantity, 0);
-                    } catch (e) {
-                        console.error('Error parsing cart:', e);
-                    }
-                }
-            }
-
-            const badge = document.getElementById('cartBadge');
-            if (totalItems > 0) {
-                badge.textContent = totalItems;
-                badge.style.display = 'inline-flex';
-            } else {
-                badge.style.display = 'none';
-            }
-        }
-
-        // Check cart on page load
-        document.addEventListener('DOMContentLoaded', updateCartBadge);
-
-        // Add active class to bottom nav based on current page
-        document.addEventListener('DOMContentLoaded', function() {
-            const currentPath = window.location.pathname;
-            const navItems = document.querySelectorAll('.bottom-nav-item');
-
-            navItems.forEach(item => {
-                item.classList.remove('active');
-            });
-
-            // Set active based on URL
-            if (currentPath.includes('/client/dashboard')) {
-                document.getElementById('navHome').classList.add('active');
-            } else if (currentPath.includes('/client/restaurants')) {
-                document.getElementById('navRestaurants').classList.add('active');
-            } else if (currentPath.includes('/client/search')) {
-                document.getElementById('navSearch').classList.add('active');
-
-            } else if (currentPath.includes('/client/profile')) {
-                document.getElementById('navProfile').classList.add('active');
-            }
-        });
-
-        {% block extra_js %}{% endblock %}
     </script>
+    {% block extra_js %}{% endblock %}
 </body>
 </html>
