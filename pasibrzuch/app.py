@@ -426,6 +426,71 @@ def submit_reservation(restaurant_id):
         return jsonify({'success': False, 'message': str(e)})
 
 
+@app.route('/client/reservation/<int:reservation_id>/details', methods=['GET'])
+@login_required
+def client_reservation_details(reservation_id):
+    """Pobiera szczegóły rezerwacji dla okna popup"""
+    if session.get('role') != 'client':
+        return jsonify({'success': False, 'message': 'Brak dostępu'}), 403
+
+    reservation = Reservation.query.filter_by(id=reservation_id, user_id=session['user_id']).first()
+    if not reservation:
+        return jsonify({'success': False, 'message': 'Nie znaleziono rezerwacji'}), 404
+
+    # Przygotowanie danych o zamówionych produktach
+    items_data = []
+    total_price = 0
+    if reservation.items:
+        for item in reservation.items:
+            item_total = item.quantity * item.menu_item.price
+            total_price += item_total
+            items_data.append({
+                'name': item.menu_item.name,
+                'quantity': item.quantity,
+                'price': float(item.menu_item.price),
+                'total': float(item_total)
+            })
+
+    return jsonify({
+        'success': True,
+        'id': reservation.id,
+        'restaurant_name': reservation.restaurant.name,
+        'date': reservation.date.strftime('%Y-%m-%d') if hasattr(reservation.date, 'strftime') else str(
+            reservation.date),
+        'time': reservation.time.strftime('%H:%M') if hasattr(reservation.time, 'strftime') else str(reservation.time),
+        'table_number': reservation.table.number,
+        'people': reservation.people,
+        'notes': reservation.notes or '',
+        'items': items_data,
+        'total_price': float(total_price)
+    })
+
+
+@app.route('/client/reservation/<int:reservation_id>/cancel', methods=['POST'])
+@login_required
+def client_cancel_reservation(reservation_id):
+    """Usuwa rezerwację z bazy danych"""
+    if session.get('role') != 'client':
+        return jsonify({'success': False, 'message': 'Brak dostępu'}), 403
+
+    reservation = Reservation.query.filter_by(id=reservation_id, user_id=session['user_id']).first()
+    if not reservation:
+        return jsonify({'success': False, 'message': 'Nie znaleziono rezerwacji lub brak uprawnień'}), 404
+
+    try:
+        # Najpierw usuwamy powiązane pozycje menu, jeśli istnieją (zależy od kaskady w modelach)
+        if reservation.items:
+            for item in reservation.items:
+                db.session.delete(item)
+
+        db.session.delete(reservation)
+        db.session.commit()
+        return jsonify({'success': True, 'message': 'Rezerwacja została pomyślnie odwołana.'})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'message': f'Błąd podczas odwoływania: {str(e)}'}), 500
+
+
 @app.route('/client/order/<int:restaurant_id>')
 @login_required
 def client_order(restaurant_id):
@@ -838,6 +903,96 @@ def waiter_reservations():
     return render_template('waiter/reservations.html',
                            restaurant=assigned_restaurant,
                            assigned_restaurant=assigned_restaurant)
+
+
+# ========== PANEL KELNERA - ZARZĄDZANIE MENU ==========
+@app.route('/waiter/menu-management')
+@login_required
+def waiter_menu_management():
+    """Zakładka wyświetlająca aktualne menu przypisanej restauracji"""
+    if session.get('role') != 'waiter':
+        flash('Brak dostępu', 'danger')
+        return redirect(url_for('login'))
+
+    assigned_restaurant = get_assigned_restaurant(session['user_id'])
+    if not assigned_restaurant:
+        flash('Nie masz przypisanej restauracji', 'warning')
+        return redirect(url_for('login'))
+
+    # Pobranie pozycji menu przypisanych do danej restauracji
+    menu_items = MenuItem.query.filter_by(restaurant_id=assigned_restaurant.id).all()
+
+    # Wyciągnięcie unikalnych kategorii dań (posortowanych alfabetycznie)
+    categories = sorted(list(set([item.category for item in menu_items])))
+
+    return render_template('waiter/menu_management.html',
+                           restaurant=assigned_restaurant,
+                           assigned_restaurant=assigned_restaurant,
+                           menu_items=menu_items,
+                           categories=categories)
+
+
+# ========== MODYFIKACJA MENU (POPUPI / AJAX) ==========
+
+@app.route('/waiter/menu-management/update/<int:item_id>', methods=['POST'])
+@login_required
+def update_menu_item(item_id):
+    """Aktualizacja pól dania oraz statusu dostępności"""
+    if session.get('role') != 'waiter':
+        return jsonify({'success': False, 'message': 'Brak dostępu'}), 403
+
+    item = MenuItem.query.get_or_404(item_id)
+
+    # Bezpieczeństwo: sprawdzenie czy kelner edytuje danie ze swojej restauracji
+    assigned_restaurant = get_assigned_restaurant(session['user_id'])
+    if not assigned_restaurant or item.restaurant_id != assigned_restaurant.id:
+        return jsonify({'success': False, 'message': 'Brak uprawnień do tego menu'}), 403
+
+    try:
+        # Pobieranie danych z formularza / JSONa
+        data = request.get_json() if request.is_json else request.form
+
+        item.name = data.get('name', item.name)
+        item.price = float(data.get('price', item.price))
+        item.category = data.get('category', item.category)
+        item.description = data.get('description', item.description)
+
+        # Obsługa checkboxa/statusu dostępności
+        if 'available' in data:
+            # Jeśli idzie przez JSON, to będzie True/False, jeśli przez klasyczny form: 'on'
+            item.available = data['available'] in [True, 'true', 'on', 1, '1']
+        else:
+            # Jeśli przesyłamy dane formularzem i checkbox nie został zaznaczony
+            if not request.is_json:
+                item.available = False
+
+        db.session.commit()
+        return jsonify({'success': True, 'message': 'Pozycja została zaktualizowana.'})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'message': f'Błąd zapisu: {str(e)}'}), 500
+
+
+@app.route('/waiter/menu-management/delete/<int:item_id>', methods=['POST'])
+@login_required
+def delete_menu_item(item_id):
+    """Całkowite usunięcie dania z bazy danych"""
+    if session.get('role') != 'waiter':
+        return jsonify({'success': False, 'message': 'Brak dostępu'}), 403
+
+    item = MenuItem.query.get_or_404(item_id)
+
+    assigned_restaurant = get_assigned_restaurant(session['user_id'])
+    if not assigned_restaurant or item.restaurant_id != assigned_restaurant.id:
+        return jsonify({'success': False, 'message': 'Brak uprawnień'}), 403
+
+    try:
+        db.session.delete(item)
+        db.session.commit()
+        return jsonify({'success': True, 'message': 'Pozycja została usunięta z bazy danych.'})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'message': f'Błąd podczas usuwania: {str(e)}'}), 500
 
 # ========== PANEL MENADŻERA ==========
 @app.route('/manager/dashboard')

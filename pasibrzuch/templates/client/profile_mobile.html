@@ -142,6 +142,128 @@
     box-sizing: border-box;
 }
 
+/* Przycisk Odwołaj i jego efekt podświetlenia na czerwono */
+.cancel-res-btn {
+    padding: 6px 14px;
+    background-color: #f8f9fa;
+    border: 1px solid #ddd;
+    color: #666;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease-in-out;
+}
+
+.cancel-res-btn:hover {
+    background-color: #dc3545;
+    border-color: #dc3545;
+    color: white;
+    box-shadow: 0 2px 4px rgba(220, 53, 69, 0.2);
+}
+
+/* Stylizacja Okna Popup (Modal) */
+.custom-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.25s ease;
+}
+
+.custom-modal-overlay.active {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.custom-modal-box {
+    background: white;
+    width: 90%;
+    max-width: 500px;
+    border-radius: 16px;
+    padding: 24px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+    transform: translateY(-20px);
+    transition: transform 0.25s ease;
+    max-height: 85vh;
+    overflow-y: auto;
+}
+
+.custom-modal-overlay.active .custom-modal-box {
+    transform: translateY(0);
+}
+
+.modal-header-title {
+    margin: 0 0 16px 0;
+    color: #333;
+    font-size: 20px;
+    border-bottom: 2px solid #eee;
+    padding-bottom: 10px;
+}
+
+.modal-details-block {
+    background: #f8f9fa;
+    border-radius: 10px;
+    padding: 14px;
+    margin-bottom: 16px;
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+.modal-question {
+    font-weight: 600;
+    color: #222;
+    margin: 20px 0 16px 0;
+    text-align: center;
+    font-size: 15px;
+}
+
+.modal-buttons-container {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+}
+
+.btn-modal-confirm {
+    background-color: #dc3545;
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 10px;
+    font-weight: 600;
+    cursor: pointer;
+    flex: 1;
+    transition: background 0.2s;
+}
+
+.btn-modal-confirm:hover {
+    background-color: #bd2130;
+}
+
+.btn-modal-dismiss {
+    background-color: #6c757d;
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 10px;
+    font-weight: 600;
+    cursor: pointer;
+    flex: 1;
+    transition: background 0.2s;
+}
+
+.btn-modal-dismiss:hover {
+    background-color: #5a6268;
+}
+
 /* ==========================================================================
    NOWE STYLE DLA WERSJI DESKTOPOWEJ (Zdjęcie blokady mobilnej)
    ========================================================================== */
@@ -154,10 +276,8 @@
 {% endblock %}
 
 {% block content %}
-<!-- Zastąpiono sztywne 480px elastyczną klasą profile-wrapper -->
 <div class="profile-wrapper">
 <div class="profile-container">
-    <!-- Nagłówek profilu -->
     <div class="profile-header">
         <div class="profile-avatar">
             <i class="fas fa-user"></i>
@@ -173,7 +293,6 @@
         </div>
     </div>
 
-    <!-- Statystyki -->
     <div class="profile-section">
         <h3>Twoja aktywność</h3>
         <div style="display: flex; justify-content: space-around; text-align: center; padding: 10px 0;">
@@ -192,16 +311,12 @@
         </div>
     </div>
 
-    <!-- Rezerwacje -->
     <div class="profile-section">
-        <h3>
-            Twoje rezerwacje i zamówienia
-<!--            <a href="#" class="section-link">Wszystkie</a>-->
-        </h3>
+        <h3>Twoje rezerwacje i zamówienia</h3>
 
         {% if reservations %}
             {% for res in reservations %}
-            <div class="reservation-item" style="padding-bottom: 16px; margin-bottom: 16px; border-bottom: 1px solid #eee;">
+            <div class="reservation-item" id="reservation-card-{{ res.id }}" style="padding-bottom: 16px; margin-bottom: 16px; border-bottom: 1px solid #eee;">
                 <div class="reservation-title" style="font-size: 16px; display: flex; justify-content: space-between; align-items: center;">
                     <span>{{ res.restaurant.name }}</span>
                     <span style="color: #FF6B35; font-weight: 700;">
@@ -243,7 +358,10 @@
                     </div>
                 {% endif %}
 
-                <div style="margin-top: 8px;">
+                <div style="margin-top: 12px; display: flex; justify-content: space-between; align-items: center;">
+                    <button type="button" class="cancel-res-btn" onclick="openCancelModal({{ res.id }})">
+                        <i class="fas fa-times" style="margin-right: 4px;"></i> Odwołaj
+                    </button>
                     <span class="status-badge {% if res.status == 'confirmed' %}status-confirmed{% else %}status-pending{% endif %}">
                         {% if res.status == 'confirmed' %}Potwierdzona{% else %}Oczekuje{% endif %}
                     </span>
@@ -255,7 +373,6 @@
         {% endif %}
     </div>
 
-    <!-- Polecane -->
     <div class="profile-section">
         <h3>Polecamy dziś</h3>
         <div style="display: flex; align-items: center; gap: 16px;">
@@ -272,7 +389,6 @@
         </div>
     </div>
 
-    <!-- Ustawienia -->
     <div class="profile-section">
         <h3>Ustawienia</h3>
         <div style="display: flex; flex-direction: column; gap: 12px;">
@@ -296,4 +412,107 @@
     </div>
 </div>
 </div>
+
+<div class="custom-modal-overlay" id="cancelModalOverlay">
+    <div class="custom-modal-box">
+        <h4 class="modal-header-title">Szczegóły odwoływanej rezerwacji</h4>
+
+        <div id="modalDynamicContent">
+            <p style="text-align: center; color: #666;"><i class="fas fa-spinner fa-spin"></i> Pobieranie danych z bazy...</p>
+        </div>
+
+        <p class="modal-question">Czy na pewno chcesz odwołać tę rezerwację?</p>
+
+        <div class="modal-buttons-container">
+            <button type="button" class="btn-modal-confirm" id="btnModalConfirmAction">Odwołaj</button>
+            <button type="button" class="btn-modal-dismiss" onclick="closeCancelModal()">Anuluj</button>
+        </div>
+    </div>
+</div>
+
+<script>
+let activeReservationId = null;
+
+function openCancelModal(reservationId) {
+    activeReservationId = reservationId;
+    const overlay = document.getElementById('cancelModalOverlay');
+    const contentContainer = document.getElementById('modalDynamicContent');
+
+    contentContainer.innerHTML = '<p style="text-align: center; color: #666;"><i class="fas fa-spinner fa-spin"></i> Pobieranie danych z bazy...</p>';
+    overlay.classList.add('active');
+
+    fetch(`/client/reservation/${reservationId}/details`)
+        .then(response => response.json())
+        .then(data => {
+            if(data.success) {
+                let itemsHtml = '';
+                if(data.items && data.items.length > 0) {
+                    itemsHtml = `
+                        <div style="margin-top: 10px; border-top: 1px solid #ddd; padding-top: 8px;">
+                            <strong style="font-size: 12px; color: #555;">Zamówienie Pre-order:</strong>
+                            <ul style="margin: 4px 0 0 0; padding-left: 20px; font-size: 13px; color: #444;">
+                                ${data.items.map(i => `<li>${i.name} x${i.quantity} (${i.total.toFixed(2)} zł)</li>`).join('')}
+                            </ul>
+                            <div style="text-align: right; font-weight: bold; margin-top: 4px; font-size: 13px;">Suma: ${data.total_price.toFixed(2)} zł</div>
+                        </div>
+                    `;
+                }
+
+                contentContainer.innerHTML = `
+                    <div class="modal-details-block">
+                        <strong>Restauracja:</strong> ${data.restaurant_name}<br>
+                        <strong>Termin:</strong> ${data.date} godz. ${data.time}<br>
+                        <strong>Stolik:</strong> Nr ${data.table_number} (${data.people} os.)<br>
+                        ${data.notes ? `<strong>Uwagi:</strong> <em>"${data.notes}"</em><br>` : ''}
+                        ${itemsHtml}
+                    </div>
+                `;
+            } else {
+                contentContainer.innerHTML = `<p style="color: #dc3545; text-align: center;">Błąd: ${data.message}</p>`;
+            }
+        })
+        .catch(err => {
+            contentContainer.innerHTML = '<p style="color: #dc3545; text-align: center;">Nie udało się pobrać danych.</p>';
+        });
+}
+
+function closeCancelModal() {
+    document.getElementById('cancelModalOverlay').classList.remove('active');
+    activeReservationId = null;
+}
+
+document.getElementById('btnModalConfirmAction').addEventListener('click', function() {
+    if(!activeReservationId) return;
+
+    const confirmBtn = this;
+    confirmBtn.disabled = true;
+    confirmBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Usuwanie...';
+
+    fetch(`/client/reservation/${activeReservationId}/cancel`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if(data.success) {
+            closeCancelModal();
+            //alert(data.message);
+            window.location.reload();
+        } else {
+            alert('Wystąpił błąd: ' + data.message);
+        }
+    })
+    .catch(err => {
+        alert('Błąd sieciowy serwera.');
+    })
+    .finally(() => {
+        confirmBtn.disabled = false;
+        confirmBtn.innerText = 'Odwołaj';
+    });
+});
+
+document.getElementById('cancelModalOverlay').addEventListener('click', function(e) {
+    if(e.target === this) closeCancelModal();
+});
+</script>
 {% endblock %}

@@ -63,9 +63,9 @@
                 <span>Rezerwacje</span>
             </a>
 
-            <a href="#" class="nav-item">
-                <i class="fas fa-clipboard-list"></i>
-                <span>Zamówienia</span>
+            <a href="{{ url_for('waiter_menu_management') }}" class="nav-item {% if request.endpoint == 'waiter_menu_management' %}active{% endif %}">
+                <i class="fas fa-utensils"></i>
+                <span>Zarządzanie menu</span>
             </a>
             {% endif %}
 
@@ -155,8 +155,8 @@
                 setTimeout(() => toast.remove(), 300);
             });
         }, 5000);
-
-        {% block extra_js %}{% endblock %}
     </script>
+
+    {% block extra_js %}{% endblock %}
 </body>
 </html>
