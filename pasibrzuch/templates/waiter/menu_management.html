@@ -6,41 +6,36 @@
 <style>
     /* POTĘŻNY RESET – WYMUSZENIE SCROLLA NA DESKOP */
 
-    /* 1. Resetujemy całe okno i ciało strony */
     html, body, body.tablet-view {
         height: auto !important;
         min-height: 100vh !important;
-        overflow: auto !important; /* Wymusza scroll okna przeglądarki */
+        overflow: auto !important;
     }
 
-    /* 2. Resetujemy kontener siatki tabletu */
     .tablet-layout {
-        display: block !important; /* Wyłączamy elastyczny podział */
+        display: block !important;
         height: auto !important;
         min-height: 100vh !important;
         overflow: visible !important;
     }
 
-    /* 3. KLUCZOWY ELEMENT: Całkowicie rozbijamy blokadę klasy .tablet-main */
     main, .tablet-main {
-        display: block !important;       /* Zmieniamy z flex na zwykły blok pionowy */
-        height: auto !important;        /* Kasujemy sztywne 100vh */
+        display: block !important;
+        height: auto !important;
         min-height: 100vh !important;
-        overflow: visible !important;    /* Wyłączamy 'hidden' bez dyskusji */
+        overflow: visible !important;
         position: relative !important;
     }
 
-    /* GŁÓWNY KONTENER MENU – ROŚNIE NATURALNIE W DÓŁ */
     .menu-management-container {
         padding: 20px;
         display: flex;
         flex-direction: column;
         gap: 30px;
         box-sizing: border-box;
-        padding-bottom: 100px; /* Duży margines na dole, żeby nic nie przylegało do krawędzi */
+        padding-bottom: 100px;
     }
 
-    /* --- Reszta Twoich stylów (popupy, sekcje, karty) bez zmian --- */
     .category-section {
         background: var(--white, #fff);
         border-radius: 12px;
@@ -139,7 +134,7 @@
         color: #E74C3C;
     }
 
-    /* POPUP EDYCJI (MODAL) */
+    /* POPUPY MODALNE */
     .modal-overlay {
         position: fixed;
         top: 0;
@@ -280,8 +275,8 @@
 {% endblock %}
 
 {% block content %}
-<div class="restaurant-view-header">
-    <div class="restaurant-info-header">
+<div class="restaurant-view-header" style="display: flex; justify-content: space-between; align-items: center;">
+    <div class="restaurant-info-header" style="display: flex; align-items: center; gap: 15px;">
         <div class="restaurant-logo-small">
             <i class="fas fa-utensils"></i>
         </div>
@@ -290,6 +285,10 @@
             <p>Kliknij na dowolną pozycję dań, aby edytować jej dane, zmienić dostępność lub usunąć.</p>
         </div>
     </div>
+
+    <button class="btn-add-new" onclick="openAddModal()" style="background: #27AE60; color: white; border: none; padding: 12px 22px; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 14px; display: flex; align-items: center; gap: 8px; white-space: nowrap; box-shadow: 0 2px 6px rgba(39,174,96,0.2);">
+        <i class="fas fa-plus-circle"></i> Nowe danie
+    </button>
 </div>
 
 <div class="menu-management-container">
@@ -345,6 +344,47 @@
     {% endif %}
 </div>
 
+<div class="modal-overlay" id="addModal" onclick="closeAddModal(event)">
+    <div class="modal-box" onclick="event.stopPropagation()">
+        <div class="modal-header">
+            <h3>Dodaj nową pozycję do menu</h3>
+            <button class="close-modal-btn" onclick="hideAddModal()">&times;</button>
+        </div>
+
+        <form id="addMenuForm" onsubmit="saveNewMenuItem(event)">
+            <div class="form-group">
+                <label for="add-name">Nazwa dania *</label>
+                <input type="text" id="add-name" required placeholder="np. Kotlet schabowy">
+            </div>
+
+            <div class="form-group">
+                <label for="add-price">Cena (zł) *</label>
+                <input type="number" id="add-price" step="0.01" min="0" required placeholder="0.00">
+            </div>
+
+            <div class="form-group">
+                <label for="add-category">Kategoria *</label>
+                <input type="text" id="add-category" required placeholder="np. Dania główne, Zupy, Desery">
+            </div>
+
+            <div class="form-group">
+                <label for="add-description">Opis dania</label>
+                <textarea id="add-description" placeholder="Krótki opis składników..."></textarea>
+            </div>
+
+            <div class="form-group checkbox-group">
+                <input type="checkbox" id="add-available" checked>
+                <label for="add-available">Pozycja od razu dostępna w karcie</label>
+            </div>
+
+            <div class="modal-actions">
+                <button type="button" class="btn-delete" onclick="hideAddModal()" style="background: #718096; flex: 1;">Anuluj</button>
+                <button type="submit" class="btn-save" style="flex: 2;"><i class="fas fa-plus"></i> Dodaj do karty</button>
+            </div>
+        </form>
+    </div>
+</div>
+
 <div class="modal-overlay" id="editModal" onclick="closeEditModal(event)">
     <div class="modal-box" onclick="event.stopPropagation()">
         <div class="modal-header">
@@ -394,7 +434,9 @@
 
 <script>
     const modal = document.getElementById('editModal');
+    const addModal = document.getElementById('addModal');
 
+    // OBSŁUGA MODALU EDYCJI
     function openEditModal(card) {
         document.getElementById('edit-id').value = card.getAttribute('data-id');
         document.getElementById('edit-name').value = card.getAttribute('data-name');
@@ -418,6 +460,24 @@
         }
     }
 
+    // OBSŁUGA MODALU DODAWANIA
+    function openAddModal() {
+        document.getElementById('addMenuForm').reset();
+        document.getElementById('add-available').checked = true;
+        addModal.classList.add('active');
+    }
+
+    function hideAddModal() {
+        addModal.classList.remove('active');
+    }
+
+    function closeAddModal(event) {
+        if(event.target === addModal) {
+            hideAddModal();
+        }
+    }
+
+    // AJAX - ZAPIS EDYCJI
     async function saveMenuItem(event) {
         event.preventDefault();
 
@@ -452,6 +512,7 @@
         }
     }
 
+    // AJAX - USUWANIE
     async function deleteMenuItem() {
         const id = document.getElementById('edit-id').value;
         const name = document.getElementById('edit-name').value;
@@ -475,6 +536,40 @@
         } catch (error) {
             console.error('Error deleting:', error);
             alert('Wystąpił błąd sieci podczas usuwania.');
+        }
+    }
+
+    // AJAX - ZAPIS NOWEGO DANIA
+    async function saveNewMenuItem(event) {
+        event.preventDefault();
+
+        const payload = {
+            name: document.getElementById('add-name').value,
+            price: document.getElementById('add-price').value,
+            category: document.getElementById('add-category').value,
+            description: document.getElementById('add-description').value,
+            available: document.getElementById('add-available').checked
+        };
+
+        try {
+            const response = await fetch('/waiter/menu-management/add', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(payload)
+            });
+
+            const result = await response.json();
+            if (result.success) {
+                hideAddModal();
+                window.location.reload();
+            } else {
+                alert('Błąd: ' + result.message);
+            }
+        } catch (error) {
+            console.error('Error adding item:', error);
+            alert('Wystąpił błąd komunikacji z serwerem.');
         }
     }
 </script>

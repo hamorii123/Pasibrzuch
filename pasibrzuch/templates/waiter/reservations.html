@@ -1,0 +1,288 @@
+{% extends "waiter/layout_tablet.html" %}
+
+{% block title %}Nadchodzące Rezerwacje{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* BEZWZGLĘDNY RESET DLA WERSJI DESKTOP (ODBLOKOWANIE SCROLLA DLA DŁUGIEJ LISTY) */
+    html, body, body.tablet-view, .tablet-layout, main, .tablet-main {
+        height: auto !important;
+        min-height: 100vh !important;
+        overflow: auto !important;
+    }
+
+    .reservations-container {
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+        gap: 25px;
+        box-sizing: border-box;
+        padding-bottom: 80px;
+    }
+
+    /* SIATKA (GRID) - 4 KOLUMNY NA DUŻYM EKRANIE BEZ SCROLLOWANIA W BOK */
+    .reservations-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 20px;
+        margin-top: 15px;
+    }
+
+    /* KWADRATOWY KAFELEK REZERWACJI */
+    .reservation-card {
+        background: var(--white, #fff);
+        border: 1px solid #edf2f7;
+        border-radius: 12px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        padding: 18px;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        min-height: 320px; /* Wymuszenie kwadratowego kształtu */
+        transition: transform 0.2s, box-shadow 0.2s;
+        box-sizing: border-box;
+    }
+
+    .reservation-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+        border-color: #ff6b35;
+    }
+
+    /* NAGŁÓWEK KAFELKA */
+    .card-header-info {
+        border-bottom: 1px solid #edf2f7;
+        padding-bottom: 10px;
+        margin-bottom: 12px;
+    }
+
+    .card-meta-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 8px;
+    }
+
+    .badge-date {
+        background-color: #e2e8f0;
+        color: #4a5568;
+        padding: 4px 8px;
+        border-radius: 6px;
+        font-weight: 600;
+        font-size: 12px;
+    }
+
+    .badge-time {
+        background-color: #fff3cd;
+        color: #856404;
+        padding: 4px 8px;
+        border-radius: 6px;
+        font-weight: 700;
+        font-size: 12px;
+    }
+
+    .client-name {
+        font-size: 16px;
+        font-weight: 700;
+        color: #2d3748;
+        margin: 5px 0 2px 0;
+    }
+
+    .details-row {
+        font-size: 13px;
+        color: #718096;
+        display: flex;
+        gap: 10px;
+        margin-bottom: 5px;
+    }
+
+    .badge-table {
+        background-color: #edf2f7;
+        color: #2d3748;
+        font-weight: 600;
+        padding: 2px 6px;
+        border-radius: 4px;
+    }
+
+    /* SEKCJA ZAMÓWIENIA (DANIE W ŚRODKU KAFELKA) */
+    .card-orders-section {
+        flex-grow: 1;
+        overflow-y: auto; /* Wewnętrzny scroll tylko dla dań, jeśli jest ich mega dużo */
+        max-height: 140px;
+        margin-bottom: 12px;
+        padding-right: 4px;
+    }
+
+    .card-orders-section::-webkit-scrollbar {
+        width: 4px;
+    }
+    .card-orders-section::-webkit-scrollbar-thumb {
+        background: #cbd5e0;
+        border-radius: 2px;
+    }
+
+    .order-title {
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        color: #a0aec0;
+        margin-bottom: 6px;
+        font-weight: 700;
+    }
+
+    .order-item-line {
+        display: flex;
+        justify-content: space-between;
+        font-size: 13px;
+        color: #4a5568;
+        margin-bottom: 4px;
+        line-height: 1.3;
+    }
+
+    .order-item-name {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        max-width: 180px;
+    }
+
+    .order-item-qty {
+        font-weight: 600;
+        color: #718096;
+    }
+
+    .no-dishes {
+        font-size: 12px;
+        color: #a0aec0;
+        font-style: italic;
+    }
+
+    /* STOPKA KAFELKA - STATUS I TOTAL */
+    .card-footer-summary {
+        border-top: 1px solid #edf2f7;
+        padding-top: 10px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .status-confirmed {
+        color: #27AE60;
+        font-weight: 600;
+        font-size: 13px;
+    }
+
+    .status-pending {
+        color: #f6ad55;
+        font-weight: 600;
+        font-size: 13px;
+    }
+
+    .total-price-box {
+        text-align: right;
+    }
+
+    .total-label {
+        font-size: 10px;
+        color: #a0aec0;
+        text-transform: uppercase;
+        font-weight: 600;
+    }
+
+    .total-amount {
+        font-size: 16px;
+        font-weight: 800;
+        color: #ff6b35;
+    }
+
+    .no-reservations-alert {
+        text-align: center;
+        padding: 50px;
+        color: #718096;
+        background: white;
+        border-radius: 12px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="restaurant-view-header">
+    <div class="restaurant-info-header">
+        <div class="restaurant-logo-small">
+            <i class="fas fa-calendar-alt"></i>
+        </div>
+        <div class="restaurant-title-wrapper">
+            <h1>Harmonogram Rezerwacji: {{ restaurant.name }}</h1>
+            <p>Najbliższe rezerwacje w postaci kafelków z podglądem zamówionych dań i kwoty sumarycznej</p>
+        </div>
+    </div>
+</div>
+
+<div class="reservations-container">
+    {% if reservations %}
+        <div class="reservations-grid">
+            {% for res in reservations %}
+            <div class="reservation-card">
+
+                <div class="card-header-info">
+                    <div class="card-meta-row">
+                        <span class="badge-date">{{ res.date.strftime('%d.%m.%Y') }}</span>
+                        <span class="badge-time">{{ res.time.strftime('%H:%M') }}</span>
+                    </div>
+                    <h3 class="client-name">{{ res.user.name if res.user else 'Klient zewnętrzny' }}</h3>
+                    <div class="details-row">
+                        <span class="badge-table">Stolik {{ res.table.number if res.table else res.table_id }}</span>
+                        <span><i class="fas fa-users"></i> {{ res.people }} os.</span>
+                    </div>
+                </div>
+
+                <div class="card-orders-section">
+                    <div class="order-title">Zamówione potrawy:</div>
+                    {% if res.items %}
+                        {% for item in res.items %}
+                        <div class="order-item-line">
+                            <span class="order-item-name">{{ item.menu_item.name if item.menu_item else 'Danie' }}</span>
+                            <span class="order-item-qty">x{{ item.quantity }}</span>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="no-dishes">Tylko rezerwacja stolika (brak dań)</div>
+                    {% endif %}
+                </div>
+
+                <div class="card-footer-summary">
+                    <div class="status-box">
+                        {% if res.status == 'confirmed' %}
+                            <span class="status-confirmed"><i class="fas fa-check-circle"></i> Potwierdzona</span>
+                        {% else %}
+                            <span class="status-pending"><i class="fas fa-hourglass-half"></i> Oczekuje</span>
+                        {% endif %}
+                    </div>
+
+                    <div class="total-price-box">
+                        <div class="total-label">Total</div>
+                        <div class="total-amount">
+                            {# Obliczamy sumę zamówienia: ilość * cena dania #}
+                            {% set total = namespace(value=0) %}
+                            {% for item in res.items %}
+                                {% if item.menu_item %}
+                                    {% set total.value = total.value + (item.quantity * item.menu_item.price) %}
+                                {% endif %}
+                            {% endfor %}
+                            {{ "%.2f"|format(total.value) }} zł
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="no-reservations-alert">
+            <i class="fas fa-calendar-times fa-3x" style="color: #cbd5e0; margin-bottom: 15px;"></i>
+            <h3>Brak nadchodzących rezerwacji</h3>
+            <p>W bazie danych nie znaleziono żadnych przyszłych rezerwacji dla Twojej restauracji.</p>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

@@ -889,7 +889,7 @@ def waiter_floor_plan(restaurant_id):
 @app.route('/waiter/reservations')
 @login_required
 def waiter_reservations():
-    """Zakładka z pełną listą rezerwacji (plik waiter/reservations.html)"""
+    """Zakładka z pełną listą nadchodzących rezerwacji ułożonych chronologicznie"""
     if session.get('role') != 'waiter':
         flash('Brak dostępu', 'danger')
         return redirect(url_for('login'))
@@ -899,10 +899,28 @@ def waiter_reservations():
         flash('Nie masz przypisanej restauracji', 'warning')
         return redirect(url_for('login'))
 
-    # Renderuje pusty na razie szablon, który zaraz sobie utworzycie w projekcie
+    now = datetime.now()
+
+    # Wyciągamy rezerwacje od dnia dzisiejszego w przód dla danej restauracji
+    upcoming_reservations = Reservation.query.filter(
+        Reservation.restaurant_id == assigned_restaurant.id,
+        Reservation.status.in_(['confirmed', 'pending']),
+        Reservation.date >= now.date()
+    ).order_by(Reservation.date.asc(), Reservation.time.asc()).all()
+
+    # Filtrujemy rezerwacje z dzisiejszego dnia, odrzucając te, których godzina już minęła
+    final_reservations = []
+    for res in upcoming_reservations:
+        if res.date == now.date():
+            if res.time >= now.time():
+                final_reservations.append(res)
+        else:
+            final_reservations.append(res)
+
     return render_template('waiter/reservations.html',
                            restaurant=assigned_restaurant,
-                           assigned_restaurant=assigned_restaurant)
+                           assigned_restaurant=assigned_restaurant,
+                           reservations=final_reservations)
 
 
 # ========== PANEL KELNERA - ZARZĄDZANIE MENU ==========
@@ -993,6 +1011,39 @@ def delete_menu_item(item_id):
     except Exception as e:
         db.session.rollback()
         return jsonify({'success': False, 'message': f'Błąd podczas usuwania: {str(e)}'}), 500
+
+
+@app.route('/waiter/menu-management/add', methods=['POST'])
+@login_required
+def add_menu_item():
+    """Dodawanie nowego dania do karty menu danej restauracji"""
+    if session.get('role') != 'waiter':
+        return jsonify({'success': False, 'message': 'Brak dostępu'}), 403
+
+    assigned_restaurant = get_assigned_restaurant(session['user_id'])
+    if not assigned_restaurant:
+        return jsonify({'success': False, 'message': 'Brak przypisanej restauracji'}), 403
+
+    data = request.get_json()
+    if not data or not data.get('name') or not data.get('price') or not data.get('category'):
+        return jsonify({'success': False, 'message': 'Wypełnij wymagane pola (Nazwa, Cena, Kategoria)'}), 400
+
+    try:
+        new_item = MenuItem(
+            restaurant_id=assigned_restaurant.id,
+            name=data['name'],
+            price=float(data['price']),
+            category=data['category'],
+            description=data.get('description', ''),
+            available=data.get('available', True)
+        )
+
+        db.session.add(new_item)
+        db.session.commit()
+        return jsonify({'success': True, 'message': 'Nowe danie zostało dodane do karty!'})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'message': f'Błąd bazy danych: {str(e)}'}), 500
 
 # ========== PANEL MENADŻERA ==========
 @app.route('/manager/dashboard')
