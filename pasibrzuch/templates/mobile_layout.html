@@ -51,6 +51,10 @@
                 display: none !important;
             }
 
+            .sidebar-toggle-btn {
+                display: none !important; /* Ukryty na telefonach */
+            }
+
             .header {
                 background: var(--gradient-orange) !important;
                 height: 100px !important;
@@ -117,7 +121,7 @@
                 background-color: #f0f2f5;
             }
 
-            /* Lewy panel nawigacyjny stały na ekranie */
+            /* Lewy panel nawigacyjny ze wsparciem płynnego chowania */
             .desktop-sidebar {
                 width: 280px;
                 height: 100vh;
@@ -128,7 +132,39 @@
                 display: flex;
                 flex-direction: column;
                 box-shadow: 4px 0 15px rgba(0,0,0,0.1);
-                z-index: 1000;
+                z-index: 1050;
+                transition: transform 0.3s ease-in-out;
+            }
+
+            /* Klasa chowająca boczny panel */
+            .desktop-sidebar.collapsed {
+                transform: translateX(-100%);
+            }
+
+            /* Przycisk-suwak przyczepiony do krawędzi paska */
+            .sidebar-toggle-btn {
+                display: none;
+                position: absolute;
+                right: -35px;
+                top: 50%;
+                transform: translateY(-50%);
+                width: 35px;
+                height: 70px;
+                background: var(--primary-orange);
+                color: white;
+                border: none;
+                border-radius: 0 12px 12px 0;
+                cursor: pointer;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                box-shadow: 4px 0 10px rgba(0,0,0,0.15);
+                z-index: 1051;
+                transition: background 0.2s;
+            }
+
+            .sidebar-toggle-btn:hover {
+                background: #E55A2B;
             }
 
             .sidebar-logo-container {
@@ -189,7 +225,7 @@
                 border-top: 1px solid rgba(255,255,255,0.1);
             }
 
-            /* Główny kontener na treść na komputerze */
+            /* Główny kontener na treść ze wsparciem rozszerzania */
             .main {
                 margin-left: 280px;
                 flex: 1;
@@ -198,9 +234,14 @@
                 box-sizing: border-box;
                 display: flex;
                 justify-content: center;
+                transition: margin-left 0.3s ease-in-out;
             }
 
-            /* Wygładzenie i ograniczenie szerokości podstron, żeby nie były rozciągnięte */
+            /* Gdy pasek schowany, treść zajmuje cały ekran */
+            .main.expanded {
+                margin-left: 0;
+            }
+
             .mobile-container, .container {
                 width: 100%;
                 max-width: 1100px;
@@ -212,7 +253,12 @@
 </head>
 <body>
 
-    <nav class="desktop-sidebar">
+    <!-- Dodane ID oraz przycisk suwaka wewnątrz nawigacji -->
+    <nav class="desktop-sidebar" id="sidebarPanel">
+        <button class="sidebar-toggle-btn" onclick="toggleSidebar()">
+            <i class="fas fa-chevron-left" id="toggleIcon"></i>
+        </button>
+
         <div class="sidebar-logo-container">
             <div class="sidebar-logo-bg">
                 <img src="{{ url_for('static', filename='images/logo.png') }}" alt="ResNow" style="height: 90px;">
@@ -256,7 +302,8 @@
     </header>
 
 
-    <main class="main">
+    <!-- Dodane ID do sekcji main -->
+    <main class="main" id="mainContent">
         <div style="width: 100%;">
             {% with messages = get_flashed_messages(with_categories=true) %}
                 {% if messages %}
@@ -294,6 +341,68 @@
     </nav>
 
     <script>
+        // Funkcja do wsuwania i wysuwania paska bocznego za pomocą suwaka
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebarPanel');
+            const mainContent = document.getElementById('mainContent');
+            const icon = document.getElementById('toggleIcon');
+
+            sidebar.classList.toggle('collapsed');
+            mainContent.classList.toggle('expanded');
+
+            if (sidebar.classList.contains('collapsed')) {
+                icon.className = 'fas fa-chevron-right';
+            } else {
+                icon.className = 'fas fa-chevron-left';
+            }
+
+            // Ważne dla canvasa: wywołujemy odświeżenie rysowania stolików po zmianie szerokości ekranu
+            setTimeout(() => {
+                if (typeof initCanvas === "function") {
+                    initCanvas();
+                }
+            }, 320);
+        }
+
+
+        // Logika uruchamiana po załadowaniu strony
+        document.addEventListener("DOMContentLoaded", () => {
+            // Sprawdzamy, czy to strona rezerwacji
+            const isReservationPage = window.location.href.includes('reservation') ||
+                                      window.location.href.includes('rezerwacja') ||
+                                      document.querySelector('.reservation-steps');
+
+            const toggleBtn = document.querySelector('.sidebar-toggle-btn');
+
+            if (isReservationPage && window.innerWidth >= 992) {
+                // 1. Pokaż przycisk-suwak (tylko na stronie rezerwacji!)
+                if (toggleBtn) {
+                    toggleBtn.style.display = 'flex';
+                }
+
+                // 2. Automatycznie schowaj pasek na starcie rezerwacji
+                const sidebar = document.getElementById('sidebarPanel');
+                const mainContent = document.getElementById('mainContent');
+                const icon = document.getElementById('toggleIcon');
+
+                sidebar.classList.add('collapsed');
+                mainContent.classList.add('expanded');
+                icon.className = 'fas fa-chevron-right';
+
+                // 3. Odświeżenie canvasu po schowaniu paska
+                setTimeout(() => {
+                    if (typeof initCanvas === "function") {
+                        initCanvas();
+                    }
+                }, 320);
+            } else {
+                // Na wszystkich innych stronach upewniamy się, że przycisk jest ukryty
+                if (toggleBtn) {
+                    toggleBtn.style.display = 'none';
+                }
+            }
+        });
+
         // Automatyczne ukrywanie powiadomień systemowych (Toast)
         setTimeout(() => {
             const toasts = document.querySelectorAll('.toast');
